@@ -4,9 +4,9 @@
 function delay(time = 0) {
 	return new Promise(
 		(res) => {
-        setTimeout( res, time )
+			setTimeout( res, time );
 		}
-	)
+	);
 }
 
-export default delay
+export default delay;
