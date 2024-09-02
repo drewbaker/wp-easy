@@ -63,23 +63,20 @@ class Utils {
 		);
 		$content = ob_get_clean();
 
-		$wp_components = array( 'header', 'footer' );
-		if ( ! in_array( $name, $wp_components ) ) {
-			// Match styles
-			preg_match_all( '/<style\b[^>]*>(.*?)<\/style>/si', $content, $styles );
+		// Match styles
+		preg_match_all( '/<style\b[^>]*>(.*?)<\/style>/si', $content, $styles );
 
-			// Match scripts
-			preg_match_all( '/<script\b[^>]*>(.*?)<\/script>/si', $content, $scripts );
+		// Match scripts
+		preg_match_all( '/<script\b[^>]*>(.*?)<\/script>/si', $content, $scripts );
 
-			if ( ! empty( $styles[0] ) ) {
-				self::enqueue_component_styles( $styles[1] );
-				$content = str_replace( $styles[0], '', $content );
-			}
+		if ( ! empty( $styles[0] ) ) {
+			self::enqueue_component_styles( $styles[1] );
+			$content = str_replace( $styles[0], '', $content );
+		}
 
-			if ( ! empty( $scripts[0] ) ) {
-				self::enqueue_component_scripts( $scripts[1] );
-				$content = str_replace( $scripts[0], '', $content );
-			}
+		if ( ! empty( $scripts[0] ) ) {
+			self::enqueue_component_scripts( $scripts[1] );
+			$content = str_replace( $scripts[0], '', $content );
 		}
 
 		echo $content;
