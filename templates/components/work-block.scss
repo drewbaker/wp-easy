@@ -1,0 +1,18 @@
+@import '../../assets/styles/media-queries';
+
+.work-block {
+    background-color: red;
+
+    .title {
+        color: var(--color-black);
+    }
+
+    // Media queries can be used like this
+    @media #{$lt-phone} {
+        background-color: yellow;
+        
+        .title {
+            color: var(--color-black);
+        }
+    }   
+}

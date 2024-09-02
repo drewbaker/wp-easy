@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<ruleset name="WP">
+    <description>My custom coding standard.</description>
+    <rule ref="WordPress-Core">
+        <!-- <exclude name="PEAR.Commenting.FileComment.Missing"/> -->
+        <exclude name="WordPress.PHP.YodaConditions.NotYoda"/>
+        <exclude name="WordPress.PHP.StrictComparisons"/>
+        <exclude name="WordPress.PHP.StrictInArray"/>
+        <exclude name="WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid"/>
+        <exclude name="WordPress.DateTime.RestrictedFunctions.date_date"/>
+        <exclude name="WordPress.DB.PreparedSQL"/>
+        <exclude name="WordPress.WP.I18n.MissingTranslatorsComment"/>
+        <exclude name="WordPress.CodeAnalysis.AssignmentInCondition.Found"/>
+        <exclude name="WordPress.PHP.DisallowShortTernary.Found"/>
+        <exclude name="Generic.Files.LineEndings.InvalidEOLChar"/>
+        <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+        <exclude name="Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure"/>
+        <exclude name="PSR2.ControlStructures.SwitchDeclaration.TerminatingComment"/>
+    </rule>
+</ruleset>
