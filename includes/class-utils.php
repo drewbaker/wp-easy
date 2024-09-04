@@ -114,20 +114,53 @@ class Utils {
 		$diff = array_diff( $styles, self::$printed_styles );
 		if ( ! empty( $diff ) ) {
 			$style_str = join( PHP_EOL, $diff );
-			if ( class_exists( 'ScssPhp\ScssPhp\Compiler' ) ) {
-				try {
-					$compiler  = new \ScssPhp\ScssPhp\Compiler();
-					$style_str = $compiler->compileString( $style_str )->getCss();
-				} catch ( \Exception $e ) {
-					//
-				}
-			}
-
+			$style_str = self::compile_scss( $style_str );
 			printf( '<style>%s</style>', $style_str );
 
 			self::$printed_styles = array_unique( array_merge( self::$printed_styles, $styles ) );
 		}
+	}
 
+	/**
+	 * Return compiled string for SCSS style.
+	 *
+	 * @param string $style_str Style string
+	 *
+	 * @return string
+	 */
+	public static function compile_scss( $style_str ) {
+		static $cache = null;
+
+		// Init cache.
+		if ( $cache === null ) {
+			$cache = get_transient( 'wp_easy_cached_styles' );
+
+			if ( ! is_array( $cache ) ) {
+				$cache = array();
+			}
+		}
+
+		// Check cache first.
+		$key = md5( $style_str );
+		if ( array_key_exists( $key, $cache ) ) {
+			return $cache[ $key ];
+		}
+
+		// Compile if not in cache.
+		if ( class_exists( 'ScssPhp\ScssPhp\Compiler' ) ) {
+			try {
+				$compiler  = new \ScssPhp\ScssPhp\Compiler();
+				$style_str = $compiler->compileString( $style_str )->getCss();
+			} catch ( \Exception $e ) {
+				//
+			}
+		}
+
+		// Store into DB.
+		$cache[ $key ] = $style_str;
+		set_transient( 'wp_easy_cached_styles', $cache, DAY_IN_SECONDS );
+
+		return $style_str;
 	}
 
 	/**
