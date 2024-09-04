@@ -115,7 +115,6 @@ class Utils {
 		if ( ! empty( $diff ) ) {
 			$style_str = join( PHP_EOL, $diff );
 			if ( class_exists( 'ScssPhp\ScssPhp\Compiler' ) ) {
-				error_log( 'here' );
 				try {
 					$compiler  = new \ScssPhp\ScssPhp\Compiler();
 					$style_str = $compiler->compileString( $style_str )->getCss();
