@@ -7,6 +7,7 @@ Build a modern WordPress theme, but without any of the hassle of modern frontend
 - No build step
 - Flexible reusable template routing
 - Reusable component based approach
+- Single File Components
 - SVG support built in
 - SCSS support
 - Font loading (local fonts, Adobe, Google and more)
@@ -54,13 +55,13 @@ Templates and components work very similary. The best way to think of theme is t
 - Templates are located in the theme's `/templates` directory.
 - Components are located in the theme's `/component` directory.
 
-A template or a component will always have `.php` file, that determines the HTML and strucutre. It will have an optional `.scss` or `.css` file for the styles that go with it, and an optional `.js` file for any specific JavaScript that is needed for that template or component. They are loaded automatically whenever you use a template or a component.
-
+A template or a component will always have `.php` file, that determines the HTML, Styles and JS. 
 #### Templates
 
 Your `/templates/work.php` might look something like this:
 
 ```
+<template>
 <?php use_component('header'); ?>
 
 <main class="work">
@@ -68,9 +69,41 @@ Your `/templates/work.php` might look something like this:
 </main>
 
 <?php use_component('footer'); ?>
+</template>
+
+<style>
+.work {
+    background: red;
+
+    .work-block {
+        .background: blue; // YES, this is SCSS and works out of the box!
+    }
+
+    // Media queries can be used like this, this will make the title black on phones
+    @media #{$lt-phone} {
+        background-color: yellow;
+        
+        .work-block {
+            background: var(--color-black); // This is how you use native CSS variables that are defined in /styles/varibles.scss
+        }
+    }   
+}
+</style>
+
+<script>
+$('.work').click(()=>{
+    console.log('Something clicked!')
+})
+</script>
 ```
 
-The framework will also load `/templates/work.scss` or `/templates/work.css`, and `/templates/work.js` if those files are present. These should be used for styles and JS that are specific and isolated only to this component. If you have global styles if JS that you need, the you can use the `/styles/main.scss` and `/js/main.js` files for these.
+The `style` block is actually `SCSS`, it's an extended version of the `CSS` you've seen before. It's big advanatge is it allows for nesting, and varibles. Native CSS allows for varibles nativly too, those are better and are used in `/styles/varibles.scss`, but some advanced varibles like the media-query one used in the example can't be used with native CSS vars. 
+
+Nesting is coming to native CSS too eventually, but for now the SCSS synatx is easier to use. You can read about how [nesting works here](https://sass-lang.com/guide/#nesting).
+
+The `@media #{$lt-phone}` is a custom media query defined in the `/styles/media-queries.scss` file. There are a few more ones defined there that will come in real handy for styling a component for different screen sizes. Note the `@import '../styles/media-queries';` statment at the top of the file, that is important (NOTE: one day I'd like to remove that as a requirment but for now you need it).
+
+If you have global styles or JS that you need, the you can use the `/styles/main.scss` and `/js/main.js` files for these.
 
 #### Components
 
@@ -87,6 +120,7 @@ What this is doing is similar to the WordPress function `get_template_part()`, i
 For exmaple, the `/components/work-block.php` component might look like this:
 
 ```
+<template>
 <?php
 // Set default args for the component
 $args = set_defaults($args, [
@@ -99,6 +133,7 @@ $args = set_defaults($args, [
         <?= $args['title']; ?>
     </h2>
 </div>
+</template>
 ```
 
 It's storngly recommend that you take the approch of keeping your components as isolated as possible. Meaning, that they only know data that is passed into them. So doing something like this is correct:
@@ -107,37 +142,7 @@ It's storngly recommend that you take the approch of keeping your components as 
 <?php use_component('work-block', ['title' => get_the_title()]); ?>
 ```
 
-Each component can have it's own `.scss` or `.css` file, and a `.js` file. They are loaded automatically once, whenever the component is used. 
-
-For example, `/components/work-block.scss` file might look like this:
-
-```
-@import '../styles/media-queries';
-
-// Highly recommended that you namespace each component's CSS like this. Match the filename to the class!
-.work-block {
-    background-color: red;
-
-    .title {
-        color: blue;
-    }
-
-    // Media queries can be used like this, this will make the title black on phones
-    @media #{$lt-phone} {
-        background-color: yellow;
-        
-        .title {
-            color: var(--color-black); // This is how you use native CSS variables that are defined in /styles/varibles.scss
-        }
-    }   
-}
-```
-
-So this is `SCSS`, it's an extended version of the `CSS` you've seen before. It's big advanatge is it allows for nesting, and varibles. Native CSS allows for varibles nativly too, those are better and are used in `/styles/varibles.scss`, but some advanced varibles like the media-query one used in the example can't be used with native CSS vars. 
-
-Nesting is coming to native CSS too eventually, but for now the SCSS synatx is easier to use. You can read about how [nesting works here](https://sass-lang.com/guide/#nesting).
-
-The `@media #{$lt-phone}` is a custom media query defined in the `/styles/media-queries.scss` file. There are a few more ones defined there that will come in real handy for styling a component for different screen sizes. Note the `@import '../styles/media-queries';` statment at the top of the file, that is important (NOTE: one day I'd like to remove that as a requirment but for now you need it).
+Each component can have it's own `<style>` or `<script>` block in it, just like templates. They are loaded automatically once, whenever the component is used. 
 
 ### Global Styles & Scripts
 
@@ -147,9 +152,11 @@ TODO Document how these work
 
 ### SCSS
 
-TODO Document how SCSS work
+- TODO Document how SCSS work
 
 ### SVGs
+
+- TODO `use_svg` will be the new better way to do this
 
 `<img>` that are really SVGs are converted to `<svg>` on page load automatically. Just add `data-svg` to any `<img>` tag and it will load the underlying SVG and replace the `<img>`. This allows you to style SVGs in CSS.
 
@@ -194,14 +201,14 @@ TODO Document how fonts work
 
 TODO Document anything else left over
 
+- Layouts
 - Open graph tags
 - Note things I turned off as out of scope
     - comments
     - emojis
 
 ## TODO & Roadmap
-- Single file components (and templates). For example, make this work: https://github.com/drewbaker/wp-easy/blob/dev/templates/work-detail.php
-- JS combine & minify
+- JS files combine & minify
 - SCSS minify and inline
     - Would be nice if we could auto-load `media-queries` and `variables` into all `.scss` files.
 - Make it a plugin not a theme
