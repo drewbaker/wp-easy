@@ -39,6 +39,7 @@ wp_easy_router([
     'work-detail'   => ['path' => '/work/:spot/', 'template' => 'work'],    // Will display the /template/work.php file also
     'reel'          => '/reel/',                                            // Short syntax, will also display the /template/reel.php file
     'article'       => ['path' => '/:article'],                             // Will display the /template/article.php file
+    'secert'        => ['path' => '/secert/', 'layout' => 'secert'],        // Will display the /template/secert.php file and the /layouts/alternate.php layout
 ]);
 ```
 
@@ -48,14 +49,18 @@ The `template` is optional, and allows you to reuse the same template for multip
 
 The router has a helper function `get_route_name()` that you can use to get the current active templates name.
 
-### Templates & Components
+### Layouts, Templates & Components
+
+Layouts are the top level strucutre of the page. You will generally always have a `/layout/default.php` layout. This would contain global elements like headers or footers. It must contain a few required functions, so see the WP Easy starter theme for reference.
 
 Templates and components work very similary. The best way to think of theme is that you are building a website like a jigsaw puzzle. The components are each a peice of the puzzle. A template is where all the indervidual pieces (components) are put together.
 
+- Layouts are located in the theme's `/layouts` directory.
 - Templates are located in the theme's `/templates` directory.
 - Components are located in the theme's `/component` directory.
 
-A template or a component will always have `.php` file, that determines the HTML, Styles and JS. 
+A layout, template, or a component will always be a `.php` file, that determines the HTML, Styles and JS. 
+
 #### Templates
 
 Your `/templates/work.php` might look something like this:
@@ -156,31 +161,16 @@ TODO Document how these work
 
 ### SVGs
 
-- TODO `use_svg` will be the new better way to do this
-
-`<img>` that are really SVGs are converted to `<svg>` on page load automatically. Just add `data-svg` to any `<img>` tag and it will load the underlying SVG and replace the `<img>`. This allows you to style SVGs in CSS.
-
-For example, this:
-
-```
-<img data-svg class="svg" src="<?php echo esc_url( Utils::get_assets_url() ); ?>images/logo.svg">
-```
+`use_svg('logo', ['class' => 'foo'])` will render the SVG found in theme `/images/logo.svg` and give it an attribute of `class="foo"`.
 
 Will be turned into this:
 ```
-<svg data-svg="replaced" class="svg" version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="157.8px" height="20.6px" viewBox="-225.9 375.3 157.8 20.6" xml:space="preserve" >
+<svg class="foo" version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="157.8px" height="20.6px" viewBox="-225.9 375.3 157.8 20.6" xml:space="preserve" >
     //... SVG contents in here
 </svg>
 ```
 
-All attributes will be carred over also, note how `class="svg"` is added to the SVG for example. Also note that `data-svg="replaced"` is added to the converted SVGs.
-
-Sometimes you might need to re-initlize SVGs, this can be done in JS like so:
-
-```
-import {initSVGs} from "wp-easy/svgs"
-initSVGs()
-```
+All attributes will be carred over also, note how `class="svg"` is added to the SVG for example. 
 
 ### JavaScript
 
@@ -197,33 +187,27 @@ TODO Document how fonts work
 
 - Font loaded events
 
-## Notes
-
-TODO Document anything else left over
-
-- Layouts
-- Open graph tags
-- Note things I turned off as out of scope
-    - comments
-    - emojis
-
-## TODO & Roadmap
+## TODO
+- Use default layout when using fallback page template
 - JS files combine & minify
 - SCSS minify and inline
     - Would be nice if we could auto-load `media-queries` and `variables` into all `.scss` files.
-- Make it a plugin not a theme
-- Make a theme settings panel to control emojis, SVG uploads, etc...
+- Make a theme settings panel to control disable emojis, SVG uploads, etc...
 
 ## TODO - Drew's list
 - How to do better JS?
     - Intersection Obververs?
     - Infinate scroll/pagination...
     - Slideshows...
-- Move components so that each is in thier own directory? With template, JS and CSS files grouped? Is this a good idea?
 - Should we use this for page animations? https://swup.js.org/getting-started/example/
 - Add Favicon to dashboard, see `wp_site_icon()` and `get_site_icon_url()`
 - Live reload when in dev mode? https://github.com/ryantate13/php-live-reload
 - Bring accross Focal Point picker and default ACF groups
+- Document anything else left over
+    - Document open graph tags
+    - Document things I turned off as out of scope
+        - comments
+        - emojis
 
 # TODO Default components left to build
 - WpImage

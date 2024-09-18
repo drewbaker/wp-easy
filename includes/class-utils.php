@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Class Utils file
  *
@@ -13,6 +14,7 @@ namespace WpEasy;
  * @package WpEasy
  */
 class Utils {
+
 	/**
 	 * Styles cache to print.
 	 *
@@ -53,8 +55,6 @@ class Utils {
 	 * @param array  $props Props to pass to component template.
 	 */
 	public static function use_component( $name, $props = null ) {
-		self::enqueue_scripts( $name, 'templates/components' );
-
 		ob_start();
 		Utils::locate_template( $name, 'components', true, false, $props );
 		$content = ob_get_clean();
@@ -169,27 +169,6 @@ class Utils {
 	}
 
 	/**
-	 * Helper function to enqueue scripts and styles for components and templates
-	 */
-	public static function enqueue_scripts( $filename, $directory = 'templates' ) {
-		// Try to enqueue all styles and scripts file for the component or template
-		$file_types = [ 'css', 'scss', 'js' ];
-		$root_path  = Utils::get_plugin_dir();
-		foreach ( $file_types as $file_type ) {
-			$file_abs_path = $root_path . '/' . $directory . '/' . $filename . '.' . $file_type;
-			if ( file_exists( $file_abs_path ) ) {
-				$file_uri = self::get_plugin_url( $directory . '/' . $filename . '.' . $file_type );
-				$handle   = $directory . '-' . $filename;
-				if ( $file_type == 'css' or $file_type == 'scss' ) {
-					wp_enqueue_style( $handle, $file_uri, [], null, 'all' );
-				} else {
-					wp_enqueue_script_module( $handle, $file_uri, [], null, true );
-				}
-			}
-		}
-	}
-
-	/**
 	 * Helper function to return the favicon URL.
 	 *
 	 * @return string
@@ -198,7 +177,7 @@ class Utils {
 		if ( has_site_icon() ) {
 			$favicon_url = get_site_icon_url();
 		} else {
-			$favicon_url = self::get_assets_url() . 'images/favicon.png';
+			$favicon_url = get_theme_file_uri() . '/images/favicon.png';
 		}
 		return $favicon_url;
 	}
@@ -301,6 +280,7 @@ class Utils {
 
 		// Try to find a template file
 		foreach ( (array) $template_names as $template_name ) {
+
 			if ( ! $template_name ) {
 				continue;
 			}
@@ -354,18 +334,7 @@ class Utils {
 	 * @return string
 	 */
 	public static function get_template_dir( $path_relative = '' ) {
-		return self::get_plugin_dir( 'templates/' . ltrim( $path_relative, '/\\' ) );
-	}
-
-	/**
-	 * Get assets directory URL.
-	 *
-	 * @param string $path_relative Relative path string.
-	 *
-	 * @return string
-	 */
-	public static function get_assets_url( $path_relative = '' ) {
-		return self::get_plugin_url( 'assets/' . ltrim( $path_relative, '/\\' ) );
+		return get_template_directory() . '/templates/' . ltrim( $path_relative, '/\\' );
 	}
 
 	/**
@@ -375,5 +344,30 @@ class Utils {
 	 */
 	public static function get_plugin_instance() {
 		return \wp_easy_get_plugin_instance();
+	}
+
+	/**
+	 * Use a component, supporting args and loading styles and scripts
+	 *
+	 * @param string $name  SVG filename, without extension.
+	 * @param array  $props HTML attributes to pass to the SVG
+	 */
+	public static function use_svg( $name, $attrs = null ) {
+		$svg = file_get_contents( get_template_directory() . '/images/' . $name . '.svg' );
+
+		// Add any props as HTML attributes to the SVG
+		if ( $attrs ) {
+			$attrs_output = '';
+
+			foreach ( $attrs as $key => $value ) {
+				$attrs_output .= $key . '="' . $value . '" ';
+			}
+
+			$svg = str_replace( '<svg ', '<svg ' . $attrs_output, $svg );
+		}
+
+		// SEE https://clicknathan.com/web-design/strip-xml-version-from-svg-file-with-php/
+		$allowed = [ 'svg', 'g', 'path', 'a', 'animate', 'a', 'animate', 'animateMotion', 'animateTransform', 'circle', 'clipPath', 'defs', 'desc', 'ellipse', 'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite', 'feConvolveMatrix', 'feDiffuseLighting', 'feDisplacementMap', 'feDistantLight', 'feDropShadow', 'feFlood', 'feFuncA', 'feFuncB', 'feFuncG', 'feFuncR', 'feGaussianBlur', 'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'fePointLight', 'feSpecularLighting', 'feSpotLight', 'feTile', 'feTurbulence', 'filter', 'foreignObject', 'image', 'line', 'linearGradient', 'marker', 'mask', 'metadata', 'mpath', 'path', 'pattern', 'polygon', 'polyline', 'radialGradient', 'rect', 'script', 'set', 'stop', 'style', 'svg', 'switch', 'symbol', 'text', 'textPath', 'title', 'tspan', 'use', 'view' ];
+		echo strip_tags( $svg, $allowed );
 	}
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Class Router file
  *
@@ -15,6 +16,7 @@ use \WpEasy\Libs\Path_To_Regexp;
  * @package WpEasy
  */
 class Router {
+
 	public function init() {
 		add_action( 'init', array( $this, 'load_router' ) );
 	}

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Wrapper function for Utils::get_route_name().
  *
@@ -34,4 +35,11 @@ function use_children( $args = [] ) {
  */
 function set_defaults( $args, $defaults ) {
 	return wp_parse_args( $args, $defaults );
+}
+
+/**
+ * Wrapper function for Utils::use_svg()
+ */
+function use_svg( $name, $args = [] ) {
+	return \WpEasy\Utils::use_svg( $name, $args );
 }
