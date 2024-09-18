@@ -158,7 +158,6 @@ TODO Document how these work
 
 `use_svg('logo', ['class' => 'foo'])` will render the SVG found in theme `/images/logo.svg` and give it an attribute of `class="foo"`.
 
-
 Will be turned into this:
 ```
 <svg class="foo" version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="157.8px" height="20.6px" viewBox="-225.9 375.3 157.8 20.6" xml:space="preserve" >
@@ -183,33 +182,27 @@ TODO Document how fonts work
 
 - Font loaded events
 
-## Notes
-
-TODO Document anything else left over
-
-- Layouts
-- Open graph tags
-- Note things I turned off as out of scope
-    - comments
-    - emojis
-
-## TODO & Roadmap
+## TODO
+- Use default layout when using fallback page template
 - JS files combine & minify
 - SCSS minify and inline
     - Would be nice if we could auto-load `media-queries` and `variables` into all `.scss` files.
-- Make it a plugin not a theme
-- Make a theme settings panel to control emojis, SVG uploads, etc...
+- Make a theme settings panel to control disable emojis, SVG uploads, etc...
 
 ## TODO - Drew's list
 - How to do better JS?
     - Intersection Obververs?
     - Infinate scroll/pagination...
     - Slideshows...
-- Move components so that each is in thier own directory? With template, JS and CSS files grouped? Is this a good idea?
 - Should we use this for page animations? https://swup.js.org/getting-started/example/
 - Add Favicon to dashboard, see `wp_site_icon()` and `get_site_icon_url()`
 - Live reload when in dev mode? https://github.com/ryantate13/php-live-reload
 - Bring accross Focal Point picker and default ACF groups
+- Document anything else left over
+    - Document open graph tags
+    - Document things I turned off as out of scope
+        - comments
+        - emojis
 
 # TODO Default components left to build
 - WpImage
