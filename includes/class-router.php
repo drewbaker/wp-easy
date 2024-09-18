@@ -21,10 +21,32 @@ class Router {
 
 	// Load router.
 	public function load_router() {
-		$routes = include Utils::get_plugin_dir( 'router.php' );
+		// Load global variables for theme path.
+		global $wp_stylesheet_path, $wp_template_path;
+
+		if ( ! isset( $wp_stylesheet_path ) || ! isset( $wp_template_path ) ) {
+			wp_set_template_globals();
+		}
+
+		$routes = array();
+
+		// Check child theme and theme root directory for router.php
+		if ( file_exists( $wp_stylesheet_path . '/router.php' ) ) {
+			$routes = include $wp_stylesheet_path . '/router.php';
+		} elseif ( file_exists( $wp_template_path . '/router.php' ) ) {
+			$routes = include $wp_template_path . '/router.php';
+		}
+
+		// Apply filter wp_easy_routes.
+		$routes = apply_filters( 'wp_easy_routes', $routes );
+
+		// Routes validation.
+		if ( empty( $routes ) || ! is_array( $routes ) ) {
+			return;
+		}
 
 		$keys          = [];
-		$template_name = '404';
+		$template_name = '';
 		$layout_name   = 'default';
 
 		foreach ( $routes as $name => $params ) {
@@ -40,6 +62,11 @@ class Router {
 			}
 		}
 
+		// If non matching template, dismiss it.
+		if ( empty( $template_name ) ) {
+			return;
+		}
+
 		$template = Utils::locate_template( [ $template_name . '.php' ] );
 		if ( ! $template ) {
 			$error = new \WP_Error(
@@ -47,6 +74,8 @@ class Router {
 				sprintf( __( 'The file for the template %s does not exist', 'wp-easy-router' ), '<b>' . $template_name . '</b>' )
 			);
 			echo $error->get_error_message();
+
+			return;
 		}
 
 		$layout = Utils::locate_template( [ 'layouts/' . $layout_name . '.php' ] );
@@ -56,6 +85,8 @@ class Router {
 				sprintf( __( 'The file for the layout %s does not exist', 'wp-easy-router' ), '<b>' . $layout_name . '</b>' )
 			);
 			echo $error->get_error_message();
+
+			return;
 		}
 
 		// Now replace the template
