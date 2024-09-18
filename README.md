@@ -163,7 +163,7 @@ TODO Document how these work
 For example, this:
 
 ```
-<img data-svg class="svg" src="<?php echo esc_url( Utils::get_assets_url() ); ?>images/logo.svg">
+<img data-svg class="svg" src="<?= esc_url( Utils::get_assets_url() ); ?>images/logo.svg">
 ```
 
 Will be turned into this:

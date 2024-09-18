@@ -58,8 +58,6 @@ class Utils
 	 */
 	public static function use_component($name, $props = null)
 	{
-		self::enqueue_scripts($name, 'templates/components');
-
 		ob_start();
 		Utils::get_template_part(
 			'components/' . $name,
@@ -182,34 +180,6 @@ class Utils
 	}
 
 	/**
-	 * Helper function to enqueue scripts and styles for components and templates
-	 */
-	public static function enqueue_scripts($filename, $directory = '')
-	{
-		// // Try to enqueue all styles and scripts file for the component or template
-		// $file_types = ['css', 'scss', 'js'];
-		// $root_path  = get_template_directory();
-		// foreach ($file_types as $file_type) {
-		// 	$file_abs_path = $root_path . '/' . $directory . '/' . $filename . '.' . $file_type;
-
-		// 	var_dump($file_abs_path);
-
-		// 	if (file_exists($file_abs_path)) {
-		// 		$file_uri = get_template_directory_uri($directory . '/' . $filename . '.' . $file_type);
-
-		// 		$handle   = $directory . '-' . $filename;
-		// 		if ($file_type == 'css' or $file_type == 'scss') {
-		// 			wp_enqueue_style($handle, $file_uri, [], null, 'all');
-		// 		} else {
-		// 			wp_enqueue_script_module($handle, $file_uri, [], null, true);
-		// 		}
-		// 	}
-		// }
-
-		// die;
-	}
-
-	/**
 	 * Helper function to return the favicon URL.
 	 *
 	 * @return string
@@ -219,7 +189,7 @@ class Utils
 		if (has_site_icon()) {
 			$favicon_url = get_site_icon_url();
 		} else {
-			$favicon_url = get_template_directory() . '/images/favicon.png';
+			$favicon_url = get_theme_file_uri() . '/images/favicon.png';
 		}
 		return $favicon_url;
 	}

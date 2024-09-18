@@ -33,7 +33,7 @@ class Router
 		include $routes;
 
 		$keys          = [];
-		$template_name = '404';
+		$template_name = '';
 		$layout_name   = 'default';
 
 		foreach ($routes as $name => $params) {
@@ -47,6 +47,11 @@ class Router
 				$layout_name   = $params['layout'] ?? 'default';
 				break;
 			}
+		}
+
+		// If no template found, then will fallback to default WP template hierarchy.
+		if (!$template_name) {
+			return;
 		}
 
 		$template = Utils::locate_template(['templates/' . $template_name . '.php']);
