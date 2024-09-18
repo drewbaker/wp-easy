@@ -17,26 +17,25 @@ use \WpEasy\Libs\Path_To_Regexp;
  */
 class Router {
 
+	/**
+	 * Init function.
+	 */
 	public function init() {
 		add_action( 'init', array( $this, 'load_router' ) );
 	}
 
-	// Load router.
+	/**
+	 * Load router.
+	 *
+	 * @return void
+	 */
 	public function load_router() {
-		// Load global variables for theme path.
-		global $wp_stylesheet_path, $wp_template_path;
+		$routes = false;
 
-		if ( ! isset( $wp_stylesheet_path ) || ! isset( $wp_template_path ) ) {
-			wp_set_template_globals();
-		}
-
-		$routes = array();
-
-		// Check child theme and theme root directory for router.php
-		if ( file_exists( $wp_stylesheet_path . '/router.php' ) ) {
-			$routes = include $wp_stylesheet_path . '/router.php';
-		} elseif ( file_exists( $wp_template_path . '/router.php' ) ) {
-			$routes = include $wp_template_path . '/router.php';
+		// Check router.php in theme file.
+		$router_file = Utils::get_theme_file( 'router.php' );
+		if ( $router_file ) {
+			$routes = include $router_file;
 		}
 
 		// Apply filter wp_easy_routes.
@@ -69,7 +68,7 @@ class Router {
 			return;
 		}
 
-		$template = Utils::locate_template( $template_name . '.php', 'templates' );
+		$template = Utils::get_theme_file( $template_name . '.php', 'templates' );
 		if ( ! $template ) {
 			$error = new \WP_Error(
 				'missing_template',
@@ -80,7 +79,7 @@ class Router {
 			return;
 		}
 
-		$layout = Utils::locate_template( $layout_name, 'layouts' );
+		$layout = Utils::get_theme_file( $layout_name . '.php', 'layouts' );
 		if ( ! $layout ) {
 			$error = new \WP_Error(
 				'missing_template',

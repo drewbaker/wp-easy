@@ -20,14 +20,14 @@ class Utils {
 	 *
 	 * @var array
 	 */
-	public static $printed_styles = array();
+	private static $printed_styles = array();
 
 	/**
 	 * Styles cache to print.
 	 *
 	 * @var array
 	 */
-	public static $scripts_to_print = array();
+	public static $component_scripts = array();
 
 	/**
 	 * Get route name.
@@ -36,6 +36,45 @@ class Utils {
 	 */
 	public static function get_route_name() {
 		return get_query_var( 'template' ) ?? 'default';
+	}
+
+	/**
+	 * Check and get theme file path if exists. Check child theme and parent theme.
+	 *
+	 * @param string $file    File name.
+	 * @param string $sub_dir Directory name.
+	 *
+	 * @return string|false
+	 */
+	public static function get_theme_file( $file, $sub_dir = '' ) {
+		// Load global variables for theme path.
+		global $wp_stylesheet_path, $wp_template_path;
+
+		if ( ! isset( $wp_stylesheet_path ) || ! isset( $wp_template_path ) ) {
+			wp_set_template_globals();
+		}
+
+		$relative_path = ltrim( $file, '/\\' );
+		if ( $sub_dir ) {
+			$relative_path = trailingslashit( ltrim( $sub_dir, '/\\' ) ) . $relative_path;
+		}
+
+		$path = trailingslashit( $wp_stylesheet_path ) . $relative_path;
+		if ( file_exists( $path ) ) {
+			return $path;
+		}
+
+		/**
+		 * In child theme case check parent theme.
+		 */
+		if ( is_child_theme() ) {
+			$path = trailingslashit( $wp_template_path ) . $relative_path;
+			if ( file_exists( $path ) ) {
+				return $path;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -55,8 +94,14 @@ class Utils {
 	 * @param array  $props Props to pass to component template.
 	 */
 	public static function use_component( $name, $props = null ) {
+		$path = Utils::get_theme_file( $name, 'components' );
+
+		if ( ! $path ) {
+			return;
+		}
+
 		ob_start();
-		Utils::locate_template( $name, 'components', true, false, $props );
+		load_template( $path, false, $props );
 		$content = ob_get_clean();
 
 		// Match styles
@@ -165,26 +210,12 @@ class Utils {
 	 * @param array $scripts Style array to register.
 	 */
 	public static function enqueue_component_scripts( $scripts ) {
-		self::$scripts_to_print = array_unique( array_merge( self::$scripts_to_print, $scripts ) );
+		self::$component_scripts = array_unique( array_merge( self::$component_scripts, $scripts ) );
 	}
 
 	/**
-	 * Helper function to return the favicon URL.
-	 *
-	 * @return string
+	 * Get the next or previous sibling page (or any post type)
 	 */
-	public static function get_favicon_url() {
-		if ( has_site_icon() ) {
-			$favicon_url = get_site_icon_url();
-		} else {
-			$favicon_url = get_theme_file_uri() . '/images/favicon.png';
-		}
-		return $favicon_url;
-	}
-
-	/*
-	* Get the next or previous sibling page (or any post type)
-	*/
 	public static function get_adjacent_sibling( $post_id, $direction = 'next', $args = [
 		'post_type' => 'page',
 		'orderby'   => 'menu_order',
@@ -241,100 +272,6 @@ class Utils {
 			$post_object->title        = get_the_title( $post_object->ID );
 		}
 		return $post_object;
-	}
-
-	/**
-	 * Retrieve the name of the highest priority template file that exists.
-	 *
-	 * Searches in the STYLESHEETPATH before TEMPLATEPATH so that themes which
-	 * inherit from a parent theme can just overload one file. If the template is
-	 * not found in either of those, it looks in the theme-compat folder last.
-	 *
-	 * @param string|array $template_names Template file(s) to search for, in order.
-	 * @param string       $directory_name Sub Directory name to look. It can be layouts, templates, or components.
-	 * @param bool         $load           If true the template file will be loaded if it is found.
-	 * @param bool         $require_once   Whether to require_once or require. Default true.
-	 * @param array        $args           Additional arguments passed to the template.
-	 *                            Has no effect if $load is false.
-	 * @return string The template filename if one is located.
-	 */
-	public static function locate_template( $template_names, $directory_name = 'templates', $load = false, $require_once = true, $args = array() ) {
-		global $wp_stylesheet_path, $wp_template_path;
-
-		if ( ! isset( $wp_stylesheet_path ) || ! isset( $wp_template_path ) ) {
-			wp_set_template_globals();
-		}
-
-		$is_child_theme = is_child_theme();
-
-		$located = '';
-
-		// if $template_names is string convert it to array.
-		if ( ! is_array( $template_names ) ) {
-			$template_names = array(
-				$template_names,
-			);
-		}
-
-		$sub_directory = '/' . $directory_name . '/';
-
-		// Try to find a template file
-		foreach ( (array) $template_names as $template_name ) {
-
-			if ( ! $template_name ) {
-				continue;
-			}
-
-			// Trim off any slashes from the template name
-			$template_name = ltrim( $template_name, '/' );
-
-			if ( file_exists( $wp_stylesheet_path . $sub_directory . $template_name ) ) {
-				$located = $wp_stylesheet_path . $sub_directory . $template_name;
-				break;
-			} elseif ( $is_child_theme && file_exists( $wp_template_path . $sub_directory . $template_name ) ) {
-				$located = $wp_template_path . $sub_directory . $template_name;
-				break;
-			}
-		}
-
-		if ( $load && '' !== $located ) {
-			load_template( $located, $require_once, $args );
-		}
-
-		return $located;
-	}
-
-	/**
-	 * Get plugin directory path.
-	 *
-	 * @param string $path_relative Relative path string.
-	 *
-	 * @return string
-	 */
-	public static function get_plugin_dir( $path_relative = '' ) {
-		return self::get_plugin_instance()->path_to( $path_relative );
-	}
-
-	/**
-	 * Get plugin directory URL.
-	 *
-	 * @param string $path_relative Relative path string.
-	 *
-	 * @return string
-	 */
-	public static function get_plugin_url( $path_relative = '' ) {
-		return self::get_plugin_instance()->url_to( $path_relative );
-	}
-
-	/**
-	 * Get template directory path.
-	 *
-	 * @param string $path_relative Relative path string.
-	 *
-	 * @return string
-	 */
-	public static function get_template_dir( $path_relative = '' ) {
-		return get_template_directory() . '/templates/' . ltrim( $path_relative, '/\\' );
 	}
 
 	/**

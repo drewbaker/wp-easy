@@ -27,7 +27,6 @@ class Template {
 		add_action( 'wp_head', array( $this, 'print_importmaps' ) );
 		add_action( 'wp_footer', array( $this, 'print_component_scripts' ) );
 
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_styles' ), 10 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
 
 		add_action( 'the_post', array( $this, 'filter_post' ) );
@@ -64,18 +63,9 @@ class Template {
 	public function print_component_scripts() {
 		?>
 		<script type="text/javascript">
-			<?php echo join( PHP_EOL, Utils::$scripts_to_print ); ?>
+			<?php echo join( PHP_EOL, Utils::$component_scripts ); ?>
 		</script>
 		<?php
-	}
-
-	/**
-	 * Enqueue Custom Styles
-	 */
-	public function enqueue_styles() {
-		wp_enqueue_style( 'fonts', get_theme_file_uri() . '/styles/fonts.css', [], null, 'all' );
-		wp_enqueue_style( 'variables', get_theme_file_uri() . '/styles/variables.scss', [], null, 'all' );
-		wp_enqueue_style( 'main', get_theme_file_uri() . '/styles/main.scss', [], null, 'all' );
 	}
 
 	/**
