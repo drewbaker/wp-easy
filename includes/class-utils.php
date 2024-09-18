@@ -153,7 +153,12 @@ class Utils {
 	 * @param array  $props HTML attributes to pass to the SVG
 	 */
 	public static function use_svg( $name, $attrs = null ) {
-		$svg = file_get_contents( get_template_directory() . '/images/' . $name . '.svg' );
+		$path = self::get_theme_file( $name . '.svg', 'images' );
+		if ( empty( $path ) ) {
+			return;
+		}
+
+		$svg = file_get_contents( $path );
 
 		// Add any props as HTML attributes to the SVG
 		if ( $attrs ) {
