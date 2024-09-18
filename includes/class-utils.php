@@ -98,7 +98,7 @@ class Utils {
 	 * @param array  $props Props to pass to component template.
 	 */
 	public static function use_component( $name, $props = null ) {
-		$path = Utils::get_theme_file( $name, 'components' );
+		$path = Utils::get_theme_file( $name . '.php', 'components' );
 
 		if ( ! $path ) {
 			return;
@@ -234,8 +234,7 @@ class Utils {
 		// Compile if not in cache.
 		if ( class_exists( 'ScssPhp\ScssPhp\Compiler' ) ) {
 			try {
-				$compiler  = new \ScssPhp\ScssPhp\Compiler();
-				$style_str = $compiler->compileString( $style_str )->getCss();
+				$style_str = self::get_scss_compiler()->compileString( $style_str )->getCss();
 			} catch ( \Exception $e ) {
 				//
 			}
@@ -246,6 +245,15 @@ class Utils {
 		set_transient( 'wp_easy_cached_styles', $cache, DAY_IN_SECONDS );
 
 		return $style_str;
+	}
+
+	public static function get_scss_compiler() {
+		static $scss_compiler = null;
+		if ( empty( $scss_compiler ) ) {
+			$scss_compiler = new \ScssPhp\ScssPhp\Compiler();
+			$scss_compiler->addImportPath( self::get_theme_file( 'base/', 'styles' ) );
+		}
+		return $scss_compiler;
 	}
 
 	/**
