@@ -18,6 +18,5 @@ class Plugin extends Plugin_Base {
 		// Load modules.
 		( new Router() )->init();
 		( new Template() )->init();
-		( new Override() )->init();
 	}
 }
