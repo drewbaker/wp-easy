@@ -121,16 +121,19 @@ class Utils {
 	 * @return void
 	 */
 	private static function parse_template( $content ) {
+		preg_match_all( '/<template\b[^>]*>(.*?)<\/template>/si', $content, $templates );
+		if ( ! empty( $templates[0] ) ) {
+			$content = str_replace( $templates[0], $templates[1], $content );
+		}
+
 		preg_match_all( '/<style\b[^>]*>(.*?)<\/style>/si', $content, $styles );
-
-		// Match scripts
-		preg_match_all( '/<script\b[^>]*>(.*?)<\/script>/si', $content, $scripts );
-
 		if ( ! empty( $styles[0] ) ) {
 			self::enqueue_component_styles( $styles[1] );
 			$content = str_replace( $styles[0], '', $content );
 		}
 
+		// Match scripts
+		preg_match_all( '/<script\b[^>]*>(.*?)<\/script>/si', $content, $scripts );
 		if ( ! empty( $scripts[0] ) ) {
 			self::enqueue_component_scripts( $scripts[1] );
 			$content = str_replace( $scripts[0], '', $content );
