@@ -56,11 +56,7 @@ class Utils {
 		self::enqueue_scripts( $name, 'templates/components' );
 
 		ob_start();
-		Utils::get_template_part(
-			'components/' . $name,
-			null,
-			$props
-		);
+		Utils::locate_template( $name, 'components', true, false, $props );
 		$content = ob_get_clean();
 
 		// Match styles
@@ -269,34 +265,6 @@ class Utils {
 	}
 
 	/**
-	 * Retrieves a template part.
-	 *
-	 * @param string $slug
-	 * @param string $name Optional. Default null
-	 * @param array  $args Additional arguments passed to the template.
-	 *
-	 * @return void|false
-	 */
-	public static function get_template_part( $slug, $name = null, $args = array() ) {
-		// Setup possible parts
-		do_action( "get_template_part_{$slug}", $slug, $name, $args );
-
-		$templates = array();
-		$name      = (string) $name;
-		if ( '' !== $name ) {
-			$templates[] = "{$slug}-{$name}.php";
-		}
-
-		$templates[] = "{$slug}.php";
-
-		do_action( 'get_template_part', $slug, $name, $templates, $args );
-
-		if ( ! self::locate_template( $templates, true, false, $args ) ) {
-			return false;
-		}
-	}
-
-	/**
 	 * Retrieve the name of the highest priority template file that exists.
 	 *
 	 * Searches in the STYLESHEETPATH before TEMPLATEPATH so that themes which
@@ -304,13 +272,14 @@ class Utils {
 	 * not found in either of those, it looks in the theme-compat folder last.
 	 *
 	 * @param string|array $template_names Template file(s) to search for, in order.
+	 * @param string       $directory_name Sub Directory name to look. It can be layouts, templates, or components.
 	 * @param bool         $load           If true the template file will be loaded if it is found.
 	 * @param bool         $require_once   Whether to require_once or require. Default true.
-	 * @param array  $args Additional arguments passed to the template.
+	 * @param array        $args           Additional arguments passed to the template.
 	 *                            Has no effect if $load is false.
 	 * @return string The template filename if one is located.
 	 */
-	public static function locate_template( $template_names, $load = false, $require_once = true, $args = array() ) {
+	public static function locate_template( $template_names, $directory_name = 'templates', $load = false, $require_once = true, $args = array() ) {
 		global $wp_stylesheet_path, $wp_template_path;
 
 		if ( ! isset( $wp_stylesheet_path ) || ! isset( $wp_template_path ) ) {
@@ -321,6 +290,15 @@ class Utils {
 
 		$located = '';
 
+		// if $template_names is string convert it to array.
+		if ( ! is_array( $template_names ) ) {
+			$template_names = array(
+				$template_names,
+			);
+		}
+
+		$sub_directory = '/' . $directory_name . '/';
+
 		// Try to find a template file
 		foreach ( (array) $template_names as $template_name ) {
 			if ( ! $template_name ) {
@@ -330,11 +308,11 @@ class Utils {
 			// Trim off any slashes from the template name
 			$template_name = ltrim( $template_name, '/' );
 
-			if ( file_exists( $wp_stylesheet_path . '/wp-easy/' . $template_name ) ) {
-				$located = $wp_stylesheet_path . '/wp-easy/' . $template_name;
+			if ( file_exists( $wp_stylesheet_path . $sub_directory . $template_name ) ) {
+				$located = $wp_stylesheet_path . $sub_directory . $template_name;
 				break;
-			} elseif ( $is_child_theme && file_exists( $wp_template_path . '/wp-easy/' . $template_name ) ) {
-				$located = $wp_template_path . '/wp-easy/' . $template_name;
+			} elseif ( $is_child_theme && file_exists( $wp_template_path . $sub_directory . $template_name ) ) {
+				$located = $wp_template_path . $sub_directory . $template_name;
 				break;
 			}
 		}
