@@ -147,6 +147,31 @@ class Utils {
 	}
 
 	/**
+	 * Use a component, supporting args and loading styles and scripts
+	 *
+	 * @param string $name  SVG filename, without extension.
+	 * @param array  $props HTML attributes to pass to the SVG
+	 */
+	public static function use_svg( $name, $attrs = null ) {
+		$svg = file_get_contents( get_template_directory() . '/images/' . $name . '.svg' );
+
+		// Add any props as HTML attributes to the SVG
+		if ( $attrs ) {
+			$attrs_output = '';
+
+			foreach ( $attrs as $key => $value ) {
+				$attrs_output .= $key . '="' . $value . '" ';
+			}
+
+			$svg = str_replace( '<svg ', '<svg ' . $attrs_output, $svg );
+		}
+
+		// SEE https://clicknathan.com/web-design/strip-xml-version-from-svg-file-with-php/
+		$allowed = [ 'svg', 'g', 'path', 'a', 'animate', 'a', 'animate', 'animateMotion', 'animateTransform', 'circle', 'clipPath', 'defs', 'desc', 'ellipse', 'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite', 'feConvolveMatrix', 'feDiffuseLighting', 'feDisplacementMap', 'feDistantLight', 'feDropShadow', 'feFlood', 'feFuncA', 'feFuncB', 'feFuncG', 'feFuncR', 'feGaussianBlur', 'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'fePointLight', 'feSpecularLighting', 'feSpotLight', 'feTile', 'feTurbulence', 'filter', 'foreignObject', 'image', 'line', 'linearGradient', 'marker', 'mask', 'metadata', 'mpath', 'path', 'pattern', 'polygon', 'polyline', 'radialGradient', 'rect', 'script', 'set', 'stop', 'style', 'svg', 'switch', 'symbol', 'text', 'textPath', 'title', 'tspan', 'use', 'view' ];
+		echo strip_tags( $svg, $allowed );
+	}
+
+	/**
 	 * Enqueue component inline styles.
 	 *
 	 * @param array $styles Style array to register.
@@ -283,28 +308,4 @@ class Utils {
 		return \wp_easy_get_plugin_instance();
 	}
 
-	/**
-	 * Use a component, supporting args and loading styles and scripts
-	 *
-	 * @param string $name  SVG filename, without extension.
-	 * @param array  $props HTML attributes to pass to the SVG
-	 */
-	public static function use_svg( $name, $attrs = null ) {
-		$svg = file_get_contents( get_template_directory() . '/images/' . $name . '.svg' );
-
-		// Add any props as HTML attributes to the SVG
-		if ( $attrs ) {
-			$attrs_output = '';
-
-			foreach ( $attrs as $key => $value ) {
-				$attrs_output .= $key . '="' . $value . '" ';
-			}
-
-			$svg = str_replace( '<svg ', '<svg ' . $attrs_output, $svg );
-		}
-
-		// SEE https://clicknathan.com/web-design/strip-xml-version-from-svg-file-with-php/
-		$allowed = [ 'svg', 'g', 'path', 'a', 'animate', 'a', 'animate', 'animateMotion', 'animateTransform', 'circle', 'clipPath', 'defs', 'desc', 'ellipse', 'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite', 'feConvolveMatrix', 'feDiffuseLighting', 'feDisplacementMap', 'feDistantLight', 'feDropShadow', 'feFlood', 'feFuncA', 'feFuncB', 'feFuncG', 'feFuncR', 'feGaussianBlur', 'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'fePointLight', 'feSpecularLighting', 'feSpotLight', 'feTile', 'feTurbulence', 'filter', 'foreignObject', 'image', 'line', 'linearGradient', 'marker', 'mask', 'metadata', 'mpath', 'path', 'pattern', 'polygon', 'polyline', 'radialGradient', 'rect', 'script', 'set', 'stop', 'style', 'svg', 'switch', 'symbol', 'text', 'textPath', 'title', 'tspan', 'use', 'view' ];
-		echo strip_tags( $svg, $allowed );
-	}
 }
