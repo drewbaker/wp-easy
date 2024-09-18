@@ -156,31 +156,17 @@ TODO Document how these work
 
 ### SVGs
 
-- TODO `use_svg` will be the new better way to do this
+`use_svg('logo', ['class' => 'foo'])` will render the SVG found in theme `/images/logo.svg` and give it an attribute of `class="foo"`.
 
-`<img>` that are really SVGs are converted to `<svg>` on page load automatically. Just add `data-svg` to any `<img>` tag and it will load the underlying SVG and replace the `<img>`. This allows you to style SVGs in CSS.
-
-For example, this:
-
-```
-<img data-svg class="svg" src="<?php echo esc_url( Utils::get_assets_url() ); ?>images/logo.svg">
-```
 
 Will be turned into this:
 ```
-<svg data-svg="replaced" class="svg" version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="157.8px" height="20.6px" viewBox="-225.9 375.3 157.8 20.6" xml:space="preserve" >
+<svg class="foo" version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="157.8px" height="20.6px" viewBox="-225.9 375.3 157.8 20.6" xml:space="preserve" >
     //... SVG contents in here
 </svg>
 ```
 
-All attributes will be carred over also, note how `class="svg"` is added to the SVG for example. Also note that `data-svg="replaced"` is added to the converted SVGs.
-
-Sometimes you might need to re-initlize SVGs, this can be done in JS like so:
-
-```
-import {initSVGs} from "wp-easy/svgs"
-initSVGs()
-```
+All attributes will be carred over also, note how `class="svg"` is added to the SVG for example. 
 
 ### JavaScript
 
