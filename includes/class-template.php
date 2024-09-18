@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Class Template file
  *
@@ -12,26 +13,26 @@ namespace WpEasy;
  *
  * @package WpEasy
  */
-class Template {
+class Template
+{
 	/**
 	 * Init function
 	 */
-	public function init() {
-		add_filter( 'body_class', array( $this, 'body_class' ) );
+	public function init()
+	{
+		add_filter('body_class', array($this, 'body_class'));
 
 		// Register our custom query var
-		add_filter( 'query_vars', array( $this, 'query_vars' ) );
+		add_filter('query_vars', array($this, 'query_vars'));
 
-		add_action( 'wp_head', array( $this, 'print_importmaps' ) );
-		add_action( 'wp_footer', array( $this, 'print_component_scripts' ) );
+		add_action('wp_head', array($this, 'print_importmaps'));
+		add_action('wp_footer', array($this, 'print_component_scripts'));
 
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_styles' ), 10 );
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
+		add_action('wp_enqueue_scripts', array($this, 'enqueue_styles'), 10);
+		add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'), 10);
 
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_template_scripts' ), 10 );
-
-		add_action( 'the_post', array( $this, 'filter_post' ) );
-		add_action( 'the_posts', array( $this, 'filter_posts' ) );
+		add_action('the_post', array($this, 'filter_post'));
+		add_action('the_posts', array($this, 'filter_posts'));
 	}
 
 	/**
@@ -41,7 +42,8 @@ class Template {
 	 *
 	 * @return array
 	 */
-	public function body_class( $classes ) {
+	public function body_class($classes)
+	{
 		$classes[] = 'route-' . Utils::get_route_name();
 		return $classes;
 	}
@@ -53,7 +55,8 @@ class Template {
 	 *
 	 * @return array
 	 */
-	public function query_vars( $query_vars ) {
+	public function query_vars($query_vars)
+	{
 		$query_vars[] = 'template';
 		return $query_vars;
 	}
@@ -61,42 +64,47 @@ class Template {
 	/**
 	 * Print component inline script
 	 */
-	public function print_component_scripts() {
-		?>
-		<script type="text/javascript"><?php echo join( PHP_EOL, Utils::$scripts_to_print ); ?></script>
-		<?php
+	public function print_component_scripts()
+	{
+?>
+		<script type="text/javascript">
+			<?= join(PHP_EOL, Utils::$scripts_to_print); ?>
+		</script>
+	<?php
 	}
 
 	/**
 	 * Enqueue Custom Styles
 	 */
-	public function enqueue_styles() {
-		wp_enqueue_style( 'fonts', Utils::get_assets_url() . 'styles/fonts.css', [], null, 'all' );
-		wp_enqueue_style( 'variables', Utils::get_assets_url() . 'styles/variables.scss', [], null, 'all' );
-		wp_enqueue_style( 'main', Utils::get_assets_url() . 'styles/main.scss', [], null, 'all' );
+	public function enqueue_styles()
+	{
+		wp_enqueue_style('fonts', get_theme_file_uri() . '/styles/fonts.css', [], null, 'all');
+		wp_enqueue_style('variables', get_theme_file_uri() . '/styles/variables.scss', [], null, 'all');
+		wp_enqueue_style('main', get_theme_file_uri() . '/styles/main.scss', [], null, 'all');
 	}
 
 	/**
 	 * Enqueue Custom Scripts.
 	 */
-	public function enqueue_scripts() {
-		wp_enqueue_script( 'jquery' );
+	public function enqueue_scripts()
+	{
+		wp_enqueue_script('jquery');
 
 		// Enqueue all JS files in /js/libs
 		$this->auto_enqueue_libs();
 
 		// Enqueue wp-easy scripts
-		wp_enqueue_script_module( 'main', Utils::get_assets_url() . 'js/main.js', [ 'jquery' ], [], null, true );
-		wp_enqueue_script_module( 'svgs', Utils::get_assets_url() . 'js/svgs.js', [], null, true );
-		wp_enqueue_script_module( 'fonts', Utils::get_assets_url() . 'js/fonts.js', [], null, true );
+		wp_enqueue_script_module('main', get_theme_file_uri() . '/scripts/main.js', ['jquery'], [], null, true);
+		wp_enqueue_script_module('svgs', get_theme_file_uri() . '/scripts/svgs.js', [], null, true);
+		wp_enqueue_script_module('fonts', get_theme_file_uri() . '/scripts/fonts.js', [], null, true);
 
 		// Setup JS variables in scripts
 		wp_localize_script(
 			'jquery',
 			'serverVars',
 			array(
-				'pluginURL' => Utils::get_plugin_url(),
-				'homeURL'   => home_url(),
+				'themeURL' => get_template_directory_uri(),
+				'homeURL'  => home_url()
 			)
 		);
 	}
@@ -104,23 +112,17 @@ class Template {
 	/**
 	 * Helper function to enqueue all JS files in /js/libs
 	 */
-	private function auto_enqueue_libs() {
-		$libs_dir = Utils::get_plugin_dir( 'assets/js/libs/' );
-		$libs     = glob( $libs_dir . '*.js' );
-		foreach ( $libs as $lib ) {
+	private function auto_enqueue_libs()
+	{
+		$libs_dir = get_template_directory() . '/scripts/libs/';
+		$libs     = glob($libs_dir . '*.js');
+		foreach ($libs as $lib) {
 			// Remove file extension and version numbers for the handle name of the script
-			$handle = basename( $lib, '.js' );
-			$handle = str_replace( [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'js', '..' ], '', $handle );
-			$handle = rtrim( $handle, '.' );
-			wp_enqueue_script( $handle, Utils::get_assets_url() . 'js/libs/' . basename( $lib ), [], null, [] );
+			$handle = basename($lib, '.js');
+			$handle = str_replace(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'js', '..'], '', $handle);
+			$handle = rtrim($handle, '.');
+			wp_enqueue_script($handle, get_theme_file_uri() . '/scripts/libs/' . basename($lib), [], null, []);
 		}
-	}
-
-	/**
-	 * Load the current routes styles and scripts.
-	 */
-	public function enqueue_template_scripts() {
-		Utils::enqueue_scripts( Utils::get_route_name(), 'templates' );
 	}
 
 	/**
@@ -128,9 +130,10 @@ class Template {
 	 *
 	 * @param \WP_Post[] $posts Posts array.
 	 */
-	public function filter_posts( $posts ) {
-		foreach ( $posts as $post ) {
-			$post = Utils::expand_post_object( $post );
+	public function filter_posts($posts)
+	{
+		foreach ($posts as $post) {
+			$post = Utils::expand_post_object($post);
 		}
 		return $posts;
 	}
@@ -140,46 +143,42 @@ class Template {
 	 *
 	 * @param \WP_Post $post
 	 */
-	public function filter_post( $post ) {
-		$post = Utils::expand_post_object( $post );
+	public function filter_post($post)
+	{
+		$post = Utils::expand_post_object($post);
 	}
 
 	/**
 	 * Adding JS moudle importmaps to the head, allows easier naming of JS imports.
 	 */
-	public function print_importmaps() {
+	public function print_importmaps()
+	{
 		// Directories to find JS files in, the setup ES6 import maps for
 		$directories = [
 			// namespace => path
-			''            => 'assets/js',
-			'utils/'      => 'assets/js/utils',
-			'templates/'  => '/templates',
-			'layouts/'    => '/templates/layouts',
-			'components/' => '/templates/components',
+			''              => '/scripts',
+			'utils/'        => '/scripts/utils',
 		];
 
-		$urls      = [];
-		$root_path = Utils::get_plugin_dir();
-		$root_url  = Utils::get_plugin_url();
-
-		foreach ( $directories as $namespace => $path ) {
-			$files = glob( $root_path . $path . '/*.js' );
-			foreach ( $files as $file ) {
-				$urls[ $namespace . basename( $file, '.js' ) ] = $root_url . $path . '/' . basename( $file );
+		$urls = [];
+		foreach ($directories as $namespace => $path) {
+			$files = glob(get_template_directory() . $path . '/*.js');
+			foreach ($files as $file) {
+				$urls[$namespace . basename($file, '.js')] = get_template_directory_uri() . $path . '/' . basename($file);
 			}
 		}
 
 		$imports = [
 			'imports' => [
 				...$urls,
-			],
+			]
 		];
-		?>
+	?>
 
 		<script type="importmap">
-			<?php echo json_encode( $imports ); ?>
+			<?= json_encode($imports); ?>
 		</script>
 
-		<?php
+<?php
 	}
 }

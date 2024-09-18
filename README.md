@@ -163,7 +163,7 @@ TODO Document how these work
 For example, this:
 
 ```
-<img data-svg class="svg" src="<?php echo esc_url( Utils::get_assets_url() ); ?>images/logo.svg">
+<img data-svg class="svg" src="<?= esc_url( Utils::get_assets_url() ); ?>images/logo.svg">
 ```
 
 Will be turned into this:
@@ -197,33 +197,27 @@ TODO Document how fonts work
 
 - Font loaded events
 
-## Notes
-
-TODO Document anything else left over
-
-- Layouts
-- Open graph tags
-- Note things I turned off as out of scope
-    - comments
-    - emojis
-
-## TODO & Roadmap
+## TODO
+- Use default layout when using fallback page template
 - JS files combine & minify
 - SCSS minify and inline
     - Would be nice if we could auto-load `media-queries` and `variables` into all `.scss` files.
-- Make it a plugin not a theme
-- Make a theme settings panel to control emojis, SVG uploads, etc...
+- Make a theme settings panel to control disable emojis, SVG uploads, etc...
 
 ## TODO - Drew's list
 - How to do better JS?
     - Intersection Obververs?
     - Infinate scroll/pagination...
     - Slideshows...
-- Move components so that each is in thier own directory? With template, JS and CSS files grouped? Is this a good idea?
 - Should we use this for page animations? https://swup.js.org/getting-started/example/
 - Add Favicon to dashboard, see `wp_site_icon()` and `get_site_icon_url()`
 - Live reload when in dev mode? https://github.com/ryantate13/php-live-reload
 - Bring accross Focal Point picker and default ACF groups
+- Document anything else left over
+    - Document open graph tags
+    - Document things I turned off as out of scope
+        - comments
+        - emojis
 
 # TODO Default components left to build
 - WpImage
