@@ -83,7 +83,11 @@ class Utils {
 	public static function use_outlet() {
 		$template_file = get_query_var( 'template_file' );
 		if ( ! empty( $template_file ) ) {
+			ob_start();
 			include $template_file;
+			$content = ob_get_clean();
+
+			self::parse_template( $content );
 		}
 	}
 
@@ -104,7 +108,19 @@ class Utils {
 		load_template( $path, false, $props );
 		$content = ob_get_clean();
 
-		// Match styles
+		self::parse_template( $content );
+
+		// wp_reset_postdata();
+	}
+
+	/**
+	 * Parse template file.
+	 *
+	 * @param string $content Content string.
+	 *
+	 * @return void
+	 */
+	private static function parse_template( $content ) {
 		preg_match_all( '/<style\b[^>]*>(.*?)<\/style>/si', $content, $styles );
 
 		// Match scripts
@@ -121,8 +137,6 @@ class Utils {
 		}
 
 		echo $content;
-
-		wp_reset_postdata();
 	}
 
 	/**
