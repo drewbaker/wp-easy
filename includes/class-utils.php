@@ -20,7 +20,7 @@ class Utils {
 	 *
 	 * @var array
 	 */
-	private static $printed_styles = array();
+	private static $component_styles = array();
 
 	/**
 	 * Styles cache to print.
@@ -152,13 +152,13 @@ class Utils {
 	 * @param array $styles Style array to register.
 	 */
 	public static function enqueue_component_styles( $styles ) {
-		$diff = array_diff( $styles, self::$printed_styles );
+		$diff = array_diff( $styles, self::$component_styles );
 		if ( ! empty( $diff ) ) {
 			$style_str = join( PHP_EOL, $diff );
 			$style_str = self::compile_scss( $style_str );
 			printf( '<style>%s</style>', $style_str );
 
-			self::$printed_styles = array_unique( array_merge( self::$printed_styles, $styles ) );
+			self::$component_styles = array_unique( array_merge( self::$component_styles, $styles ) );
 		}
 	}
 
