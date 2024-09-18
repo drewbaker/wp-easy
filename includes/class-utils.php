@@ -336,9 +336,6 @@ class Utils {
 			} elseif ( $is_child_theme && file_exists( $wp_template_path . '/wp-easy/' . $template_name ) ) {
 				$located = $wp_template_path . '/wp-easy/' . $template_name;
 				break;
-			} elseif ( file_exists( self::get_template_dir() . $template_name ) ) {
-				$located = self::get_template_dir() . $template_name;
-				break;
 			}
 		}
 
