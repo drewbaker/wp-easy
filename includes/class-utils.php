@@ -231,7 +231,7 @@ class Utils {
 		static $scss_compiler = null;
 		if ( empty( $scss_compiler ) ) {
 			$scss_compiler = new \ScssPhp\ScssPhp\Compiler();
-			$scss_compiler->addImportPath( self::get_theme_file( 'base/', 'styles' ) );
+			$scss_compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
 		}
 		return $scss_compiler;
 	}
