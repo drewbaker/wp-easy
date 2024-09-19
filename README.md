@@ -49,17 +49,22 @@ The `template` is optional, and allows you to reuse the same template for multip
 
 The router has a helper function `get_route_name()` that you can use to get the current active templates name.
 
-### Layouts, Templates & Components
+### Layouts
 
 Layouts are the top level strucutre of the page. You will generally always have a `/layout/default.php` layout. This would contain global elements like headers or footers. It must contain a few required functions, so see the WP Easy starter theme for reference.
 
-Templates and components work very similary. The best way to think of theme is that you are building a website like a jigsaw puzzle. The components are each a peice of the puzzle. A template is where all the indervidual pieces (components) are put together.
+Layouts are not Single File Components. So put your styles in main.scss and scripts in main.js. 
 
 - Layouts are located in the theme's `/layouts` directory.
+
+###  Templates & Components
+
+Templates and components work very similary. The best way to think of theme is that you are building a website like a jigsaw puzzle. The components are each a peice of the puzzle. A template is where all the indervidual pieces (components) are put together.
+
 - Templates are located in the theme's `/templates` directory.
 - Components are located in the theme's `/component` directory.
 
-A layout, template, or a component will always be a `.php` file, that determines the HTML, Styles and JS. 
+A template, or a component will always be a `.php` file, that determines the HTML, Styles and JS. 
 
 #### Templates
 
