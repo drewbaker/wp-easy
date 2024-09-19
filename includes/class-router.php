@@ -68,7 +68,7 @@ class Router {
 			return;
 		}
 
-		$template = Utils::locate_template( [ 'templates/' . $template_name . '.php' ] );
+		$template = Utils::get_theme_file( $template_name . '.php', 'templates' );
 		if ( ! $template ) {
 			$error = new \WP_Error(
 				'missing_template',
@@ -77,7 +77,7 @@ class Router {
 			echo $error->get_error_message();
 		}
 
-		$layout = Utils::locate_template( [ 'layouts/' . $layout_name . '.php' ] );
+		$layout = Utils::get_theme_file( $layout_name . '.php', 'layouts' );
 		if ( ! $layout ) {
 			$error = new \WP_Error(
 				'missing_template',
