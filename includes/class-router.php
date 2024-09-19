@@ -17,11 +17,18 @@ use \WpEasy\Libs\Path_To_Regexp;
  */
 class Router {
 
+	/**
+	 * Init function.
+	 */
 	public function init() {
 		add_action( 'init', array( $this, 'load_router' ) );
 	}
 
-	// Load router.
+	/**
+	 * Load router.
+	 *
+	 * @return void
+	 */
 	public function load_router() {
 		$routes = false;
 

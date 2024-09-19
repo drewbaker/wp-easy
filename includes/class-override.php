@@ -228,10 +228,10 @@ class Override {
 		<?php
 	}
 
-	/*
-	* Adding some generic site data to start of page for SEO
-	* Added here to keep the header.php clean
-	*/
+	/**
+	 * Adding some generic site data to start of page for SEO
+	 * Added here to keep the header.php clean
+	 */
 	public function body_open() {
 		?>
 		<div class="wp-seo">
@@ -241,9 +241,11 @@ class Override {
 		<?php
 	}
 
-	/*
-	* Helper function to get a summary for the current page
-	*/
+	/**
+	 * Helper function to get a summary for the current page
+	 *
+	 * @return string
+	 */
 	private function get_summary() {
 		global $post;
 
@@ -263,12 +265,12 @@ class Override {
 		return $summary;
 	}
 
-	/*
-	* Helper function to get a title for the current page
-	*/
+	/**
+	 * Helper function to get a title for the current page
+	 *
+	 * @return string
+	 */
 	private function get_title() {
-		global $post;
-
 		$title = trim( wp_title( '', false ) );
 
 		if ( is_home() or is_front_page() ) {
