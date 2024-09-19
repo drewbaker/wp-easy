@@ -36,14 +36,15 @@ You should setup your page and post's in the WordPress dashboard as you normally
 For example:
 
 ```
-wp_easy_router([
-    'home'          => ['path' => '/'],                                     // Will display the /template/home.php file
-    'work'          => ['path' => '/work/'],                                // Will display the /template/work.php file
-    'work-detail'   => ['path' => '/work/:spot/', 'template' => 'work'],    // Will display the /template/work.php file also
-    'reel'          => '/reel/',                                            // Short syntax, will also display the /template/reel.php file
-    'article'       => ['path' => '/:article'],                             // Will display the /template/article.php file
-    'secret'        => ['path' => '/secret/', 'layout' => 'alternate'],     // Will display the /template/secret.php file and the /layouts/alternate.php layout
-]);
+$routes = [
+    'home'              => '/',
+    'work'              => '/work/',
+    // Would use the /layouts/alternate.php layout, with the /templates/work.php page template
+    'work-detail'       => ['path' => '/work/:spot/', 'layout' => 'alternate', 'template' => 'work'],
+    'reel'              => '/reel/',
+];
+
+return $routes;
 ```
 
 This syntax is similar to Node's Express path syntax. The key `home` is the route name, and the value is an array of `[path, template, layout]`. The `path` is the URI you are trying to match to. Note you can use a short string syntax instead of the array syntax of `name => '/path/'` for simple routes. 
@@ -287,7 +288,7 @@ TODO Better documentation of these
 - Use default layout when using fallback page template
 - JS blocks as files, as modules, combine & minify.
 - SCSS minify and inline
-    - Would be nice if we could auto-load anything in `/styles/global/` into all `.scss` files so no nee dto use `@import`.
+    - Would be nice if we could auto-load anything in `/styles/global/` into all `.scss` files so no need to use `@import`.
 - Make a theme settings panel to control disable emojis, SVG uploads, etc...
 - Auto load any new CSS files? What order? Maybe 
 
