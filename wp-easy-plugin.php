@@ -6,7 +6,7 @@
  * Author: Drew Baker
  * Author URI: https://github.com/drewbaker
  * Text Domain: wp-easy
- * Version: 0.1.0
+ * Version: 1.0.0
  * Year: 2024
  */
 
