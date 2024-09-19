@@ -23,12 +23,21 @@ class Router {
 
 	// Load router.
 	public function load_router() {
-		$routes = get_template_directory() . '/router.php';
-		if ( ! file_exists( $routes ) ) {
-			return;
+		$routes = false;
+
+		// Check router.php in theme file.
+		$router_file = Utils::get_theme_file( 'router.php' );
+		if ( $router_file ) {
+			$routes = include $router_file;
 		}
 
-		include $routes;
+		// Apply filter wp_easy_routes.
+		$routes = apply_filters( 'wp_easy_routes', $routes );
+
+		// Routes validation.
+		if ( empty( $routes ) || ! is_array( $routes ) ) {
+			return;
+		}
 
 		$keys          = [];
 		$template_name = '';

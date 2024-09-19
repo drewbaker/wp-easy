@@ -39,12 +39,55 @@ class Utils {
 	}
 
 	/**
+	 * Check and get theme file path if exists. Check child theme and parent theme.
+	 *
+	 * @param string $file    File name.
+	 * @param string $sub_dir Directory name.
+	 *
+	 * @return string|false
+	 */
+	public static function get_theme_file( $file, $sub_dir = '' ) {
+		// Load global variables for theme path.
+		global $wp_stylesheet_path, $wp_template_path;
+
+		if ( ! isset( $wp_stylesheet_path ) || ! isset( $wp_template_path ) ) {
+			wp_set_template_globals();
+		}
+
+		$relative_path = ltrim( $file, '/\\' );
+		if ( $sub_dir ) {
+			$relative_path = trailingslashit( ltrim( $sub_dir, '/\\' ) ) . $relative_path;
+		}
+
+		$path = trailingslashit( $wp_stylesheet_path ) . $relative_path;
+		if ( file_exists( $path ) ) {
+			return $path;
+		}
+
+		/**
+		 * In child theme case check parent theme.
+		 */
+		if ( is_child_theme() ) {
+			$path = trailingslashit( $wp_template_path ) . $relative_path;
+			if ( file_exists( $path ) ) {
+				return $path;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Use Outlet template function.
 	 */
 	public static function use_outlet() {
 		$template_file = get_query_var( 'template_file' );
 		if ( ! empty( $template_file ) ) {
+			ob_start();
 			include $template_file;
+			$content = ob_get_clean();
+
+			self::parse_template( $content );
 		}
 	}
 
@@ -55,33 +98,17 @@ class Utils {
 	 * @param array  $props Props to pass to component template.
 	 */
 	public static function use_component( $name, $props = null ) {
+		$path = Utils::get_theme_file( $name . '.php', 'components' );
+
+		if ( ! $path ) {
+			return;
+		}
+
 		ob_start();
-		Utils::get_template_part(
-			'components/' . $name,
-			null,
-			$props
-		);
+		load_template( $path, false, $props );
 		$content = ob_get_clean();
 
-		// Match styles
-		preg_match_all( '/<style\b[^>]*>(.*?)<\/style>/si', $content, $styles );
-
-		// Match scripts
-		preg_match_all( '/<script\b[^>]*>(.*?)<\/script>/si', $content, $scripts );
-
-		if ( ! empty( $styles[0] ) ) {
-			self::enqueue_component_styles( $styles[1] );
-			$content = str_replace( $styles[0], '', $content );
-		}
-
-		if ( ! empty( $scripts[0] ) ) {
-			self::enqueue_component_scripts( $scripts[1] );
-			$content = str_replace( $scripts[0], '', $content );
-		}
-
-		echo $content;
-
-		wp_reset_postdata();
+		self::parse_template( $content );
 	}
 
 	/**
@@ -103,6 +130,39 @@ class Utils {
 		$posts = new \WP_Query( $args );
 
 		return $posts->posts ?? [];
+	}
+
+	/**
+	 * Parse template file.
+	 *
+	 * @param string $content Content string.
+	 *
+	 * @return void
+	 */
+	private static function parse_template( $content ) {
+		preg_match_all( '/<template\b[^>]*>(.*?)<\/template>/si', $content, $templates );
+
+		$content_no_template = $content;
+
+		if ( ! empty( $templates[0] ) ) {
+			$content_no_template = str_replace( $templates[0], '', $content ); // to avoid double parsing for component styles in template.
+			$content             = str_replace( $templates[0], $templates[1], $content );
+		}
+
+		preg_match_all( '/<style\b[^>]*>(.*?)<\/style>/si', $content_no_template, $styles );
+		if ( ! empty( $styles[0] ) ) {
+			self::enqueue_component_styles( $styles[1] );
+			$content = str_replace( $styles[0], '', $content );
+		}
+
+		// Match scripts
+		preg_match_all( '/<script\b[^>]*>(.*?)<\/script>/si', $content_no_template, $scripts );
+		if ( ! empty( $scripts[0] ) ) {
+			self::enqueue_component_scripts( $scripts[1] );
+			$content = str_replace( $scripts[0], '', $content );
+		}
+
+		echo $content;
 	}
 
 	/**
@@ -149,8 +209,7 @@ class Utils {
 		// Compile if not in cache.
 		if ( class_exists( 'ScssPhp\ScssPhp\Compiler' ) ) {
 			try {
-				$compiler  = new \ScssPhp\ScssPhp\Compiler();
-				$style_str = $compiler->compileString( $style_str )->getCss();
+				$style_str = self::get_scss_compiler()->compileString( $style_str )->getCss();
 			} catch ( \Exception $e ) {
 				//
 			}
@@ -161,6 +220,20 @@ class Utils {
 		set_transient( 'wp_easy_cached_styles', $cache, DAY_IN_SECONDS );
 
 		return $style_str;
+	}
+
+	/**
+	 * Get SCSS compiler object.
+	 *
+	 * @return \ScssPhp\ScssPhp\Compiler
+	 */
+	public static function get_scss_compiler() {
+		static $scss_compiler = null;
+		if ( empty( $scss_compiler ) ) {
+			$scss_compiler = new \ScssPhp\ScssPhp\Compiler();
+			$scss_compiler->addImportPath( self::get_theme_file( 'base/', 'styles' ) );
+		}
+		return $scss_compiler;
 	}
 
 	/**
