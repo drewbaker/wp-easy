@@ -258,15 +258,15 @@ So the above, will be turned into this:
 
 ### JavaScript
 
-TODO Better document how JS works
+TODO Better documentation of how JS works
 
 - Auto including of JS, anything in `/scripts/libs/` will be auto enqueued as a module
 - jQuery `$` works globally
-- How to use the included modules
+- How to use the included JS modules
 
 ### Fonts
 
-TODO Better document how fonts work
+TODO Better documentation of how fonts work
 
 - Create a folder `/fonts`
 - Add fonts to `/styles/fonts.css`
