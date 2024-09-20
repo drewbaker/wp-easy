@@ -13,6 +13,7 @@ Build a modern WordPress theme, but without any of the hassle of modern frontend
 - Font loading (local fonts, Adobe, Google and more)
 - Opinionated strucutre, so you stick to best practices 
 - Auto loading of 3rd party JS libraries
+- Open Graph and SEO by default
 
 ## Why
 
@@ -282,27 +283,3 @@ TODO Better documentation of these
 - `use_outlet()`
 - `get_route_name()`
 - `set_defaults($props = [])` for setting defaults on component props
-
-
-## TODO - Features
-- Use default layout when using fallback page template
-- JS blocks as files, as modules, combine & minify.
-- SCSS minify and inline
-    - Would be nice if we could auto-load anything in `/styles/global/` into all `.scss` files so no need to use `@import`.
-- Make a theme settings panel to control disable emojis, SVG uploads, etc...
-- Auto load any new CSS files? What order? Maybe 
-
-## TODO - DX improvments 
-- How to do better JS?
-    - Intersection Obververs?
-    - Infinate scroll/pagination...
-    - Slideshows...
-- Should we use this for page animations? https://swup.js.org/getting-started/example/
-- Add Favicon to dashboard, see `wp_site_icon()` and `get_site_icon_url()`
-- Live reload when in dev mode? https://github.com/ryantate13/php-live-reload
-- Bring accross Focal Point picker and default ACF groups
-- Document anything else left over
-    - Document open graph tags
-    - Document things I turned off as out of scope
-        - comments
-        - emojis
