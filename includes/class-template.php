@@ -72,9 +72,19 @@ class Template {
 	 * Enqueue Custom Styles
 	 */
 	public function enqueue_styles() {
-		wp_enqueue_style( 'fonts', get_theme_file_uri() . '/styles/fonts.css', [], null, 'all' );
-		wp_enqueue_style( 'variables', get_theme_file_uri() . '/styles/variables.scss', [], null, 'all' );
-		wp_enqueue_style( 'main', get_theme_file_uri() . '/styles/main.scss', [], null, 'all' );
+		$libs_dir   = get_template_directory() . '/styles/';
+		$css_files  = glob( $libs_dir . '*.css' );
+		$scss_files = glob( $libs_dir . '*.scss' );
+
+		$all_style_files = array_merge( $css_files, $scss_files );
+
+		sort( $all_style_files, SORT_STRING | SORT_FLAG_CASE );
+		foreach ( $all_style_files as $style_file ) {
+			$handle = 'wp-easy-' . basename( $style_file );
+			$handle = str_replace( [ '.' ], '-', $handle );
+
+			wp_enqueue_style( $handle, get_theme_file_uri() . '/styles/' . basename( $style_file ), [], null );
+		}
 	}
 
 	/**
