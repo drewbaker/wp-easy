@@ -50,11 +50,14 @@ class Router {
 		$template_name = '';
 		$layout_name   = 'default';
 
+		$parsed_url   = parse_url( $_SERVER['REQUEST_URI'] );
+		$request_path = $parsed_url['path'];
+
 		foreach ( $routes as $name => $params ) {
 			$path    = $params['path'] ?? $params;
 			$re      = Path_To_Regexp::convert( $path, $keys );
 			$matches = [];
-			$match   = preg_match( $re, $_SERVER['REQUEST_URI'], $matches );
+			$match   = preg_match( $re, $request_path, $matches );
 
 			if ( $match ) {
 				$template_name = $params['template'] ?? $name;
