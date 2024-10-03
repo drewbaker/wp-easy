@@ -316,7 +316,8 @@ class Utils {
 			$post_object->id           = $post_object->ID;
 			$post_object->url          = get_permalink( $post_object->ID );
 			$post_object->thumbnail_id = get_post_thumbnail_id( $post_object->ID );
-			$post_object->title        = get_the_title( $post_object->ID );
+			$post_object->title        = apply_filters( 'the_title', $post_object->post_title, $post_object->ID );
+			$post_object->content      = apply_filters( 'the_content', $post_object->post_content );
 		}
 		return $post_object;
 	}
