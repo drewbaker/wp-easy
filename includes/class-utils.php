@@ -175,7 +175,7 @@ class Utils {
 		$diff = array_diff( $styles, self::$printed_styles );
 		if ( ! empty( $diff ) ) {
 			$style_str = join( PHP_EOL, $diff );
-			$style_str = self::compile_scss( $style_str );
+			$style_str = self::compile_scss( $style_str, true );
 			printf( '<style>%s</style>', $style_str );
 
 			self::$printed_styles = array_unique( array_merge( self::$printed_styles, $styles ) );
@@ -183,28 +183,47 @@ class Utils {
 	}
 
 	/**
+	 * Enqueue component inline styles.
+	 *
+	 * @param array $styles Style array to register.
+	 */
+	public static function compile_site_styles() {
+		$styles_dir = get_template_directory() . '/styles/';
+		if ( ! is_writable( $styles_dir ) ) {
+			error_log( 'Styles directory is not writable' );
+			return false;
+		}
+
+		$scss_files = glob( $styles_dir . '*.scss' );
+		$out_file_name = 'general-compiled.css';
+	}
+
+	/**
 	 * Return compiled string for SCSS style.
 	 *
-	 * @param string $style_str Style string
+	 * @param string $style_str  Style string
+	 * @param bool   $with_cache Use cached data or force generate new.
 	 *
 	 * @return string
 	 */
-	public static function compile_scss( $style_str ) {
+	public static function compile_scss( $style_str, $with_cache = true ) {
 		static $cache = null;
 
-		// Init cache.
-		if ( $cache === null ) {
-			$cache = get_transient( 'wp_easy_cached_styles' );
+		if ( $with_cache ) {
+			// Init cache.
+			if ( $cache === null ) {
+				$cache = get_transient( 'wp_easy_cached_styles' );
 
-			if ( ! is_array( $cache ) ) {
-				$cache = array();
+				if ( ! is_array( $cache ) ) {
+					$cache = array();
+				}
 			}
-		}
 
-		// Check cache first.
-		$key = md5( $style_str );
-		if ( array_key_exists( $key, $cache ) ) {
-			return $cache[ $key ];
+			// Check cache first.
+			$key = md5( $style_str );
+			if ( array_key_exists( $key, $cache ) ) {
+				return $cache[ $key ];
+			}
 		}
 
 		// Compile if not in cache.
