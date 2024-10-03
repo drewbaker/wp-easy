@@ -72,18 +72,18 @@ class Template {
 	 * Enqueue Custom Styles
 	 */
 	public function enqueue_styles() {
-		$libs_dir   = get_template_directory() . '/styles/';
-		$css_files  = glob( $libs_dir . '*.css' );
-		$scss_files = glob( $libs_dir . '*.scss' );
 
-		$all_style_files = array_merge( $css_files, $scss_files );
+		// Build site SCSS file.
+		Utils::compile_site_styles( Utils::is_debug_mode() );
 
-		sort( $all_style_files, SORT_STRING | SORT_FLAG_CASE );
-		foreach ( $all_style_files as $style_file ) {
-			$handle = 'wp-easy-' . basename( $style_file );
+		$css_files = glob( get_template_directory() . '/styles/' . '*.css' );
+		sort( $css_files, SORT_STRING | SORT_FLAG_CASE );
+
+		foreach ( $css_files as $css_file ) {
+			$handle = 'wp-easy-' . basename( $css_file );
 			$handle = str_replace( [ '.' ], '-', $handle );
 
-			wp_enqueue_style( $handle, get_theme_file_uri() . '/styles/' . basename( $style_file ), [], null );
+			wp_enqueue_style( $handle, get_theme_file_uri() . '/styles/' . basename( $css_file ), [], null );
 		}
 	}
 
