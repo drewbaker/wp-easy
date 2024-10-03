@@ -8,7 +8,6 @@
 
 namespace WpEasy;
 
-use \ScssPhp\ScssPhp\Compiler as Compiler;
 /**
  * Class Utils
  *
@@ -261,7 +260,8 @@ class Utils {
 		$out_file_url  = get_template_directory_uri() . '/styles/' . $out_file_name;
 
 		try {
-			$compiler = new Compiler();
+			self::load_scss_compiler();
+			$compiler = new \ScssPhp\ScssPhp\Compiler();
 			$compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
 			$compiler->setOutputStyle( $dev_mode ? 'expanded' : 'compressed' );
 
@@ -273,7 +273,7 @@ class Utils {
 					'sourceMapBasepath' => rtrim( ABSPATH, '/' ), // Partial route to use a root.
 					'sourceRoot'        => dirname( content_url() ), // Where to redirect external files.
 				];
-				$compiler->setSourceMap( Compiler::SOURCE_MAP_FILE );
+				$compiler->setSourceMap( \ScssPhp\ScssPhp\Compiler::SOURCE_MAP_FILE );
 				$compiler->setSourceMapOptions( $srcmap_data );
 			}
 
@@ -328,15 +328,14 @@ class Utils {
 		}
 
 		// Compile if not in cache.
-		if ( class_exists( 'ScssPhp\ScssPhp\Compiler' ) ) {
-			try {
-				$compiler = new Compiler();
-				$compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
+		try {
+			self::load_scss_compiler();
+			$compiler = new \ScssPhp\ScssPhp\Compiler();
+			$compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
 
-				$style_str = $compiler->compileString( self::get_global_scss() . $style_str )->getCss();
-			} catch ( \Exception $e ) {
-				//
-			}
+			$style_str = $compiler->compileString( self::get_global_scss() . $style_str )->getCss();
+		} catch ( \Exception $e ) {
+			//
 		}
 
 		// Store into DB.
@@ -344,6 +343,12 @@ class Utils {
 		set_transient( 'wp_easy_component_styles', $cache, DAY_IN_SECONDS );
 
 		return $style_str;
+	}
+
+	private static function load_scss_compiler() {
+		if ( ! class_exists( '\ScssPhp\ScssPhp\Compiler' ) ) {
+			require_once __DIR__ . '/../vendor/autoload.php';
+		}
 	}
 
 	/**
