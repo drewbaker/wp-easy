@@ -31,6 +31,15 @@ class Utils {
 	public static $scripts_to_print = array();
 
 	/**
+	 * Is debug mode enabled.
+	 *
+	 * @return bool
+	 */
+	public static function is_debug_mode() {
+		return defined( 'WP_DEBUG' ) && true === WP_DEBUG;
+	}
+
+	/**
 	 * Get route name.
 	 *
 	 * @return string
@@ -175,7 +184,7 @@ class Utils {
 		$diff = array_diff( $styles, self::$printed_styles );
 		if ( ! empty( $diff ) ) {
 			$style_str = join( PHP_EOL, $diff );
-			$style_str = self::compile_scss( $style_str );
+			$style_str = self::compile_scss( $style_str, ! Utils::is_debug_mode() );
 			printf( '<style>%s</style>', $style_str );
 
 			self::$printed_styles = array_unique( array_merge( self::$printed_styles, $styles ) );
@@ -183,58 +192,163 @@ class Utils {
 	}
 
 	/**
-	 * Return compiled string for SCSS style.
-	 *
-	 * @param string $style_str Style string
+	 * Get global scss content.
 	 *
 	 * @return string
 	 */
-	public static function compile_scss( $style_str ) {
-		static $cache = null;
+	public static function get_global_scss() {
+		static $global_scss = null;
 
-		// Init cache.
-		if ( $cache === null ) {
-			$cache = get_transient( 'wp_easy_cached_styles' );
+		if ( $global_scss === null ) {
+			$styles_dir = get_template_directory() . '/styles/global/';
+			$scss_files = glob( $styles_dir . '*.scss' );
 
-			if ( ! is_array( $cache ) ) {
-				$cache = array();
+			$file_update_time  = max( array_map( 'filemtime', $scss_files ) ); // current latest update time.
+			$latest_build_time = get_transient( 'wp_easy_global_scss_build_time' ); // old latest update time.
+
+			if ( $file_update_time > $latest_build_time ) {
+				$global_scss = '';
+				foreach ( $scss_files as $scss_file ) {
+					$global_scss .= file_get_contents( $scss_file ) . PHP_EOL;
+				}
+
+				set_transient( 'wp_easy_global_scss_build_time', $file_update_time );
+				set_transient( 'wp_easy_global_scss', $global_scss );
+
+				delete_transient( 'wp_easy_component_styles' );
+			} else {
+				$global_scss = get_transient( 'wp_easy_global_scss' );
 			}
 		}
 
-		// Check cache first.
+		return $global_scss;
+	}
+
+	/**
+	 * Enqueue component inline styles.
+	 *
+	 * @param bool $dev_mode Is dev mode.
+	 *
+	 * @return bool True if build success. false on error.
+	 */
+	public static function compile_site_styles( $dev_mode = false ) {
+		$styles_dir = get_template_directory() . '/styles/';
+		if ( ! is_writable( $styles_dir ) ) {
+			error_log( 'Styles directory is not writable' );
+			return false;
+		}
+
+		$scss_files = glob( $styles_dir . '*.scss' );
+
+		$scss_content = self::get_global_scss();
+
+		$file_update_time  = max( array_map( 'filemtime', $scss_files ) ); // current latest update time.
+		$file_update_time  = max( $file_update_time, get_transient( 'wp_easy_global_scss_build_time' ) ); // current latest update time.
+		$latest_build_time = get_transient( 'wp_easy_site_scss_build_time' ); // old latest update time.
+
+		// Don't compile if files are not updated.
+		if ( $file_update_time <= $latest_build_time ) {
+			return true;
+		}
+
+		foreach ( $scss_files as $scss_file ) {
+			$scss_content .= file_get_contents( $scss_file ) . PHP_EOL;
+		}
+
+		$out_file_name = apply_filters( 'wp_easy_global_style_name', 'general-compiled.css' );
+		$out_file_path = $styles_dir . $out_file_name;
+		$out_file_url  = get_template_directory_uri() . '/styles/' . $out_file_name;
+
+		try {
+			self::load_scss_compiler();
+			$compiler = new \ScssPhp\ScssPhp\Compiler();
+			$compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
+			$compiler->setOutputStyle( $dev_mode ? 'expanded' : 'compressed' );
+
+			// Configuration to create the debugging .map file.
+			if ( $dev_mode ) {
+				$srcmap_data = [
+					'sourceMapWriteTo'  => $out_file_path . '.map', // Absolute path to the map file.
+					'sourceMapURL'      => $out_file_url . '.map', // URL to the map file.
+					'sourceMapBasepath' => rtrim( ABSPATH, '/' ), // Partial route to use a root.
+					'sourceRoot'        => dirname( content_url() ), // Where to redirect external files.
+				];
+				$compiler->setSourceMap( \ScssPhp\ScssPhp\Compiler::SOURCE_MAP_FILE );
+				$compiler->setSourceMapOptions( $srcmap_data );
+			}
+
+			$result = $compiler->compileString( $scss_content );
+
+			// Save the compiled file.
+			file_put_contents( $out_file_path, $result->getCss() );
+
+			// Save map if a source map has been created
+			if ( $map = $result->getSourceMap() ) {
+				file_put_contents( $out_file_path . '.map', $map );
+			} elseif ( file_exists( $out_file_path . '.map' ) ) { // Delete if file exists
+				unlink( $out_file_path . '.map' );
+			}
+
+			set_transient( 'wp_easy_site_scss_build_time', $file_update_time );
+
+			return true;
+		} catch ( \Exception $e ) {
+			error_log( $e->getMessage() );
+
+			return false;
+		}
+	}
+
+	/**
+	 * Return compiled string for SCSS style.
+	 *
+	 * @param string $style_str  Style string
+	 * @param bool   $with_cache Use cached data or force generate new.
+	 *
+	 * @return string
+	 */
+	public static function compile_scss( $style_str, $with_cache = true ) {
+		static $cache = null;
+
 		$key = md5( $style_str );
-		if ( array_key_exists( $key, $cache ) ) {
-			return $cache[ $key ];
+		if ( $with_cache ) {
+			// Init cache.
+			if ( $cache === null ) {
+				$cache = get_transient( 'wp_easy_component_styles' );
+
+				if ( ! is_array( $cache ) ) {
+					$cache = array();
+				}
+			}
+
+			// Check cache first.
+			if ( array_key_exists( $key, $cache ) ) {
+				return $cache[ $key ];
+			}
 		}
 
 		// Compile if not in cache.
-		if ( class_exists( 'ScssPhp\ScssPhp\Compiler' ) ) {
-			try {
-				$style_str = self::get_scss_compiler()->compileString( $style_str )->getCss();
-			} catch ( \Exception $e ) {
-				//
-			}
+		try {
+			self::load_scss_compiler();
+			$compiler = new \ScssPhp\ScssPhp\Compiler();
+			$compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
+
+			$style_str = $compiler->compileString( self::get_global_scss() . $style_str )->getCss();
+		} catch ( \Exception $e ) {
+			//
 		}
 
 		// Store into DB.
 		$cache[ $key ] = $style_str;
-		set_transient( 'wp_easy_cached_styles', $cache, DAY_IN_SECONDS );
+		set_transient( 'wp_easy_component_styles', $cache, DAY_IN_SECONDS );
 
 		return $style_str;
 	}
 
-	/**
-	 * Get SCSS compiler object.
-	 *
-	 * @return \ScssPhp\ScssPhp\Compiler
-	 */
-	public static function get_scss_compiler() {
-		static $scss_compiler = null;
-		if ( empty( $scss_compiler ) ) {
-			$scss_compiler = new \ScssPhp\ScssPhp\Compiler();
-			$scss_compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
+	private static function load_scss_compiler() {
+		if ( ! class_exists( '\ScssPhp\ScssPhp\Compiler' ) ) {
+			require_once __DIR__ . '/../vendor/autoload.php';
 		}
-		return $scss_compiler;
 	}
 
 	/**
