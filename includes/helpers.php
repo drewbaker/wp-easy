@@ -43,3 +43,15 @@ function set_defaults( $args, $defaults ) {
 function use_svg( $name, $args = [] ) {
 	return \WpEasy\Utils::use_svg( $name, $args );
 }
+
+/**
+ * Echo attribute if conditioin met.
+ *
+ * @param string $att_name  Attribute name.
+ * @param bool   $condition If true print, or not print.
+ */
+function set_attribute( $att_name, $condition ) {
+	if ( $condition ) {
+		echo $att_name;
+	}
+}
