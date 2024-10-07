@@ -95,20 +95,24 @@ class Template {
 			foreach ( $files as $file ) {
 				$handle    = $namespace . basename( $file, '.js' );
 				$handles[] = $handle;
-				wp_register_script_module( $handle, get_template_directory_uri() . $path . '/' . basename( $file ) );
+				wp_register_script_module( $handle, get_theme_file_uri() . $path . '/' . basename( $file ) );
 			}
 		}
 
-		// Enqueue wp-easy scripts
+		// deregister first because auto registred doesn't have dependency.
+		wp_deregister_script_module( 'main' );
+		$handles = array_diff( $handles, [ 'main' ] );
+
+		// Enqueue wp-easy scripts.
 		wp_enqueue_script_module( 'main', get_theme_file_uri() . '/scripts/main.js', $handles );
-		wp_enqueue_script_module( 'fonts', get_theme_file_uri() . '/scripts/fonts.js' );
+		wp_enqueue_script_module( 'fonts' );
 
 		// Setup JS variables in scripts
 		wp_localize_script(
 			'jquery',
 			'serverVars',
 			array(
-				'themeURL' => get_template_directory_uri(),
+				'themeURL' => get_theme_file_uri(),
 				'homeURL'  => home_url(),
 			)
 		);
