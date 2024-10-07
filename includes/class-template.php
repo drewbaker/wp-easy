@@ -24,9 +24,6 @@ class Template {
 		// Register our custom query var
 		add_filter( 'query_vars', array( $this, 'query_vars' ) );
 
-		add_action( 'wp_head', array( $this, 'print_importmaps' ) );
-		add_action( 'wp_footer', array( $this, 'print_component_scripts' ) );
-
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_styles' ), 10 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
 
@@ -59,16 +56,6 @@ class Template {
 	}
 
 	/**
-	 * Print component inline script
-	 */
-	public function print_component_scripts() {         ?>
-		<script type="text/javascript">
-			<?php echo join( PHP_EOL, Utils::$scripts_to_print ); ?>
-		</script>
-		<?php
-	}
-
-	/**
 	 * Enqueue Custom Styles
 	 */
 	public function enqueue_styles() {
@@ -96,16 +83,36 @@ class Template {
 		// Enqueue all JS files in /js/libs
 		$this->auto_enqueue_libs();
 
-		// Enqueue wp-easy scripts
-		wp_enqueue_script_module( 'main', get_theme_file_uri() . '/scripts/main.js', [ 'jquery' ], [], null, true );
-		wp_enqueue_script_module( 'fonts', get_theme_file_uri() . '/scripts/fonts.js', [], null, true );
+		// Register all modules.
+		$directories = [
+			''       => '/scripts',
+			'utils/' => '/scripts/utils',
+		];
+
+		$handles = array();
+		foreach ( $directories as $namespace => $path ) {
+			$files = glob( get_template_directory() . $path . '/*.js' );
+			foreach ( $files as $file ) {
+				$handle    = $namespace . basename( $file, '.js' );
+				$handles[] = $handle;
+				wp_register_script_module( $handle, get_theme_file_uri() . $path . '/' . basename( $file ) );
+			}
+		}
+
+		// deregister first because auto registred doesn't have dependency.
+		wp_deregister_script_module( 'main' );
+		$handles = array_diff( $handles, [ 'main' ] );
+
+		// Enqueue wp-easy scripts.
+		wp_enqueue_script_module( 'main', get_theme_file_uri() . '/scripts/main.js', $handles );
+		wp_enqueue_script_module( 'fonts' );
 
 		// Setup JS variables in scripts
 		wp_localize_script(
 			'jquery',
 			'serverVars',
 			array(
-				'themeURL' => get_template_directory_uri(),
+				'themeURL' => get_theme_file_uri(),
 				'homeURL'  => home_url(),
 			)
 		);
@@ -145,38 +152,5 @@ class Template {
 	 */
 	public function filter_post( $post ) {
 		$post = Utils::expand_post_object( $post );
-	}
-
-	/**
-	 * Adding JS moudle importmaps to the head, allows easier naming of JS imports.
-	 */
-	public function print_importmaps() {
-		// Directories to find JS files in, the setup ES6 import maps for
-		$directories = [
-			// namespace => path
-			''       => '/scripts',
-			'utils/' => '/scripts/utils',
-		];
-
-		$urls = [];
-		foreach ( $directories as $namespace => $path ) {
-			$files = glob( get_template_directory() . $path . '/*.js' );
-			foreach ( $files as $file ) {
-				$urls[ $namespace . basename( $file, '.js' ) ] = get_template_directory_uri() . $path . '/' . basename( $file );
-			}
-		}
-
-		$imports = [
-			'imports' => [
-				...$urls,
-			],
-		];
-		?>
-
-		<script type="importmap">
-			<?php echo json_encode( $imports ); ?>
-		</script>
-
-		<?php
 	}
 }

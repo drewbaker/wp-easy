@@ -24,13 +24,6 @@ class Utils {
 	public static $printed_styles = array();
 
 	/**
-	 * Styles cache to print.
-	 *
-	 * @var array
-	 */
-	public static $scripts_to_print = array();
-
-	/**
 	 * Is debug mode enabled.
 	 *
 	 * @return bool
@@ -97,7 +90,7 @@ class Utils {
 			include $template_file;
 			$content = ob_get_clean();
 
-			self::parse_template( $content );
+			self::parse_template( $content, $template_file );
 		}
 	}
 
@@ -118,7 +111,7 @@ class Utils {
 		load_template( $path, false, $props );
 		$content = ob_get_clean();
 
-		self::parse_template( $content );
+		self::parse_template( $content, $path );
 	}
 
 	/**
@@ -145,11 +138,12 @@ class Utils {
 	/**
 	 * Parse template file.
 	 *
-	 * @param string $content Content string.
+	 * @param string $content   Content string.
+	 * @param string $file_path File path.
 	 *
 	 * @return void
 	 */
-	private static function parse_template( $content ) {
+	private static function parse_template( $content, $file_path ) {
 		preg_match_all( '/<template\b[^>]*>(.*?)<\/template>/si', $content, $templates );
 
 		$content_no_template = $content;
@@ -168,7 +162,7 @@ class Utils {
 		// Match scripts
 		preg_match_all( '/<script\b[^>]*>(.*?)<\/script>/si', $content_no_template, $scripts );
 		if ( ! empty( $scripts[0] ) ) {
-			self::enqueue_component_scripts( $scripts[1] );
+			self::enqueue_component_scripts( $scripts[1], $file_path );
 			$content = str_replace( $scripts[0], '', $content );
 		}
 
@@ -354,10 +348,46 @@ class Utils {
 	/**
 	 * Register inline scripts.
 	 *
-	 * @param array $scripts Style array to register.
+	 * @param array  $scripts   Style array to register.
+	 * @param string $file_path Component file path
 	 */
-	public static function enqueue_component_scripts( $scripts ) {
-		self::$scripts_to_print = array_unique( array_merge( self::$scripts_to_print, $scripts ) );
+	public static function enqueue_component_scripts( $scripts, $file_path ) {
+		static $build_time     = null;
+		static $enqueued_files = array();
+
+		if ( isset( $enqueued_files[ $file_path ] ) ) {
+			return;
+		}
+
+		if ( $build_time === null ) {
+			$build_time = get_transient( 'wp_easy_script_build_time' );
+
+			if ( ! is_array( $build_time ) ) {
+				$build_time = array();
+			}
+		}
+
+		$component_name = pathinfo( $file_path, PATHINFO_FILENAME );
+		$component_type = basename( dirname( $file_path ) );
+		$out_file_name  = sprintf( '%s-%s', $component_type, $component_name );
+		$filemtime      = filemtime( $file_path );
+
+		$directory     = '/scripts/components/';
+		$out_file_path = get_template_directory() . $directory . $out_file_name . '.js';
+		$out_file_url  = get_template_directory_uri() . $directory . $out_file_name . '.js';
+
+		if ( ! isset( $build_time[ $out_file_name ] ) || $build_time[ $out_file_name ] < $filemtime || ! file_exists( $out_file_path ) ) {
+			// Build component script.
+			file_put_contents( $out_file_path, join( PHP_EOL, $scripts ) );
+
+			$build_time[ $out_file_name ] = $filemtime;
+			set_transient( 'wp_easy_script_build_time', $build_time );
+		}
+
+		// Mark as enqueued.
+		$enqueued_files[ $file_path ] = true;
+
+		wp_enqueue_script_module( $out_file_name, $out_file_url );
 	}
 
 	/**
