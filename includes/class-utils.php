@@ -372,9 +372,15 @@ class Utils {
 		$out_file_name  = sprintf( '%s-%s', $component_type, $component_name );
 		$filemtime      = filemtime( $file_path );
 
-		$directory     = '/scripts/components/';
-		$out_file_path = get_template_directory() . $directory . $out_file_name . '.js';
-		$out_file_url  = get_template_directory_uri() . $directory . $out_file_name . '.js';
+		$directory = '/scripts/components';
+
+		// Create scripts/components directory if don't exist.
+		if ( ! is_dir( get_template_directory() . $directory ) ) {
+			mkdir( get_template_directory() . $directory, 0755, true );
+		}
+
+		$out_file_path = get_template_directory() . $directory . '/' . $out_file_name . '.js';
+		$out_file_url  = get_template_directory_uri() . $directory . '/' . $out_file_name . '.js';
 
 		if ( ! isset( $build_time[ $out_file_name ] ) || $build_time[ $out_file_name ] < $filemtime || ! file_exists( $out_file_path ) ) {
 			// Build component script.
