@@ -1,4 +1,5 @@
-# WP Easy - A framework for a modern WordPress theme, but make it easy. 
+# WP Easy 
+## A framework for a modern WordPress theme, but make it easy. 
 
 Build a modern WordPress theme, but without any of the hassle of modern frontend development. Easy to use, but respecting best practices.
 
@@ -11,8 +12,8 @@ Build a modern WordPress theme, but without any of the hassle of modern frontend
 - SVG support built in
 - SCSS support
 - Font loading (local fonts, Adobe, Google and more)
-- Opinionated strucutre, so you stick to best practices 
-- Auto loading of 3rd party JS libraries
+- Opinionated structure, so you stick to best practices 
+- Auto loading of CSS & JS
 - Open Graph and SEO by default
 
 ## Why
@@ -268,6 +269,10 @@ TODO Better documentation of how fonts work
 - Add fonts to `/styles/fonts.css`
 - Add font name to Webfontloader in `/scripts/fonts.js`
 - Font loaded events
+
+### Caching
+
+TODO Explain how caching works, and the "Purge Cache" button.
 
 ### Helper functions
 
