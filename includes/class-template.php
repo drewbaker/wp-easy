@@ -9,7 +9,7 @@
 namespace WpEasy;
 
 /**
- * Class Utils
+ * Class Template
  *
  * @package WpEasy
  */
@@ -61,8 +61,10 @@ class Template {
 	public function enqueue_styles() {
 
 		// Build site SCSS file.
-		Utils::compile_site_styles( Utils::is_debug_mode() );
+		$compiled_site_style = Utils::compile_site_styles( Utils::is_debug_mode() );
+		wp_enqueue_style( 'wp-easy-scss-compiled', $compiled_site_style['url'], [], $compiled_site_style['version'] );
 
+		// Enqueue all CSS files in styles directory.
 		$css_files = glob( get_template_directory() . '/styles/' . '*.css' );
 		sort( $css_files, SORT_STRING | SORT_FLAG_CASE );
 

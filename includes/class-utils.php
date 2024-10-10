@@ -193,65 +193,79 @@ class Utils {
 	public static function get_global_scss() {
 		static $global_scss = null;
 
-		if ( $global_scss === null ) {
-			$styles_dir = get_template_directory() . '/styles/global/';
-			$scss_files = glob( $styles_dir . '*.scss' );
-
-			$file_update_time  = max( array_map( 'filemtime', $scss_files ) ); // current latest update time.
-			$latest_build_time = get_transient( 'wp_easy_global_scss_build_time' ); // old latest update time.
-
-			if ( $file_update_time > $latest_build_time ) {
-				$global_scss = '';
-				foreach ( $scss_files as $scss_file ) {
-					$global_scss .= file_get_contents( $scss_file ) . PHP_EOL;
-				}
-
-				set_transient( 'wp_easy_global_scss_build_time', $file_update_time );
-				set_transient( 'wp_easy_global_scss', $global_scss );
-
-				delete_transient( 'wp_easy_component_styles' );
-			} else {
-				$global_scss = get_transient( 'wp_easy_global_scss' );
-			}
+		// Use static version if exists.
+		if ( $global_scss !== null ) {
+			return $global_scss;
 		}
+
+		$styles_dir = get_template_directory() . '/styles/global/';
+		$scss_files = glob( $styles_dir . '*.scss' );
+
+		$file_update_time = max( array_map( 'filemtime', $scss_files ) ); // current latest update time.
+		$out_file_time    = get_transient( 'wp_easy_global_scss_build_time' ); // old latest update time.
+
+		// Use cached version if it's up to date.
+		if ( $file_update_time <= $out_file_time ) {
+			$global_scss = get_transient( 'wp_easy_global_scss' );
+			return $global_scss;
+		}
+
+		// Generate global css.
+		$global_scss = '';
+		foreach ( $scss_files as $scss_file ) {
+			$global_scss .= file_get_contents( $scss_file ) . PHP_EOL;
+		}
+
+		set_transient( 'wp_easy_global_scss_build_time', $file_update_time );
+		set_transient( 'wp_easy_global_scss', $global_scss );
+
+		self::purge_component_styles();
 
 		return $global_scss;
 	}
 
 	/**
-	 * Enqueue component inline styles.
+	 * Purge component styles.
+	 */
+	public static function purge_component_styles() {
+		delete_transient( 'wp_easy_component_styles' );
+	}
+
+	/**
+	 * Compile SCSS files. Returns generated generate css file url and time(version).
 	 *
 	 * @param bool $dev_mode Is dev mode.
 	 *
-	 * @return bool True if build success. false on error.
+	 * @return array ['url' => '', 'version' => ''].
 	 */
 	public static function compile_site_styles( $dev_mode = false ) {
-		$styles_dir = get_template_directory() . '/styles/';
-		if ( ! is_writable( $styles_dir ) ) {
-			error_log( 'Styles directory is not writable' );
-			return false;
-		}
 
-		$scss_files = glob( $styles_dir . '*.scss' );
+		$src_dir   = get_template_directory() . '/styles/';
+		$src_files = glob( $src_dir . '*.scss' );
 
+		$dist_dir      = self::get_dist_directory();
+		$out_file_name = apply_filters( 'wp_easy_global_style_name', 'general-compiled.css' );
+		$out_file_path = $dist_dir['css']['dir'] . $out_file_name;
+		$out_file_url  = $dist_dir['css']['url'] . $out_file_name;
+
+		// Early do it to regenerate global scss file.
 		$scss_content = self::get_global_scss();
 
-		$file_update_time  = max( array_map( 'filemtime', $scss_files ) ); // current latest update time.
-		$file_update_time  = max( $file_update_time, get_transient( 'wp_easy_global_scss_build_time' ) ); // current latest update time.
-		$latest_build_time = get_transient( 'wp_easy_site_scss_build_time' ); // old latest update time.
+		$file_update_time = max( array_map( 'filemtime', $src_files ) ); // current latest update time.
+		$file_update_time = max( $file_update_time, get_transient( 'wp_easy_global_scss_build_time' ) ); // current latest update time.
+		$out_file_time    = filemtime( $out_file_path );
 
 		// Don't compile if files are not updated.
-		if ( $file_update_time <= $latest_build_time ) {
-			return true;
+		if ( file_exists( $out_file_path ) && $file_update_time <= $out_file_time ) {
+			return array(
+				'url'     => $out_file_url,
+				'version' => $out_file_time,
+			);
 		}
 
-		foreach ( $scss_files as $scss_file ) {
-			$scss_content .= file_get_contents( $scss_file ) . PHP_EOL;
+		foreach ( $src_files as $src_file ) {
+			$scss_content .= file_get_contents( $src_file ) . PHP_EOL;
 		}
-
-		$out_file_name = apply_filters( 'wp_easy_global_style_name', 'general-compiled.css' );
-		$out_file_path = $styles_dir . $out_file_name;
-		$out_file_url  = get_template_directory_uri() . '/styles/' . $out_file_name;
 
 		try {
 			self::load_scss_compiler();
@@ -275,6 +289,7 @@ class Utils {
 
 			// Save the compiled file.
 			file_put_contents( $out_file_path, $result->getCss() );
+			$out_file_time = filemtime( $out_file_path );
 
 			// Save map if a source map has been created
 			if ( $map = $result->getSourceMap() ) {
@@ -282,15 +297,17 @@ class Utils {
 			} elseif ( file_exists( $out_file_path . '.map' ) ) { // Delete if file exists
 				unlink( $out_file_path . '.map' );
 			}
-
-			set_transient( 'wp_easy_site_scss_build_time', $file_update_time );
-
-			return true;
 		} catch ( \Exception $e ) {
 			error_log( $e->getMessage() );
-
-			return false;
+			if ( self::is_debug_mode() ) {
+				throw $e;
+			}
 		}
+
+		return array(
+			'url'     => $out_file_url,
+			'version' => $out_file_time,
+		);
 	}
 
 	/**
@@ -329,7 +346,10 @@ class Utils {
 
 			$style_str = $compiler->compileString( self::get_global_scss() . $style_str )->getCss();
 		} catch ( \Exception $e ) {
-			//
+			error_log( $e->getMessage() );
+			if ( self::is_debug_mode() ) {
+				throw $e;
+			}
 		}
 
 		// Store into DB.
@@ -351,49 +371,35 @@ class Utils {
 	 * @param array  $scripts   Style array to register.
 	 * @param string $file_path Component file path
 	 */
-	public static function enqueue_component_scripts( $scripts, $file_path ) {
-		static $build_time     = null;
+	public static function enqueue_component_scripts( $scripts, $src_file_path ) {
 		static $enqueued_files = array();
 
-		if ( isset( $enqueued_files[ $file_path ] ) ) {
+		// Only enqueue once.
+		if ( isset( $enqueued_files[ $src_file_path ] ) ) {
 			return;
 		}
 
-		if ( $build_time === null ) {
-			$build_time = get_transient( 'wp_easy_script_build_time' );
+		$name          = pathinfo( $src_file_path, PATHINFO_FILENAME );
+		$type          = basename( dirname( $src_file_path ) );
+		$src_filemtime = (int) filemtime( $src_file_path );
 
-			if ( ! is_array( $build_time ) ) {
-				$build_time = array();
-			}
-		}
+		$dist_dir      = self::get_dist_directory();
+		$out_name      = sprintf( '%s-%s', $type, $name );
+		$out_file_name = $out_name . '.js';
+		$out_file_path = $dist_dir['js']['dir'] . $out_file_name;
+		$out_file_url  = $dist_dir['js']['url'] . $out_file_name;
+		$out_filemtime = (int) filemtime( $out_file_path );
 
-		$component_name = pathinfo( $file_path, PATHINFO_FILENAME );
-		$component_type = basename( dirname( $file_path ) );
-		$out_file_name  = sprintf( '%s-%s', $component_type, $component_name );
-		$filemtime      = filemtime( $file_path );
-
-		$directory = '/scripts/components';
-
-		// Create scripts/components directory if don't exist.
-		if ( ! is_dir( get_template_directory() . $directory ) ) {
-			mkdir( get_template_directory() . $directory, 0755, true );
-		}
-
-		$out_file_path = get_template_directory() . $directory . '/' . $out_file_name . '.js';
-		$out_file_url  = get_template_directory_uri() . $directory . '/' . $out_file_name . '.js';
-
-		if ( ! isset( $build_time[ $out_file_name ] ) || $build_time[ $out_file_name ] < $filemtime || ! file_exists( $out_file_path ) ) {
+		if ( $out_filemtime < $src_filemtime ) {
 			// Build component script.
 			file_put_contents( $out_file_path, join( PHP_EOL, $scripts ) );
-
-			$build_time[ $out_file_name ] = $filemtime;
-			set_transient( 'wp_easy_script_build_time', $build_time );
+			$out_filemtime = (int) filemtime( $out_file_path );
 		}
 
 		// Mark as enqueued.
-		$enqueued_files[ $file_path ] = true;
+		$enqueued_files[ $src_file_path ] = true;
 
-		wp_enqueue_script_module( $out_file_name, $out_file_url );
+		wp_enqueue_script_module( $out_file_name, $out_file_url, array(), $out_filemtime );
 	}
 
 	/**
@@ -537,5 +543,42 @@ class Utils {
 		// SEE https://clicknathan.com/web-design/strip-xml-version-from-svg-file-with-php/
 		$allowed = [ 'svg', 'g', 'path', 'a', 'animate', 'a', 'animate', 'animateMotion', 'animateTransform', 'circle', 'clipPath', 'defs', 'desc', 'ellipse', 'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite', 'feConvolveMatrix', 'feDiffuseLighting', 'feDisplacementMap', 'feDistantLight', 'feDropShadow', 'feFlood', 'feFuncA', 'feFuncB', 'feFuncG', 'feFuncR', 'feGaussianBlur', 'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'fePointLight', 'feSpecularLighting', 'feSpotLight', 'feTile', 'feTurbulence', 'filter', 'foreignObject', 'image', 'line', 'linearGradient', 'marker', 'mask', 'metadata', 'mpath', 'path', 'pattern', 'polygon', 'polyline', 'radialGradient', 'rect', 'script', 'set', 'stop', 'style', 'svg', 'switch', 'symbol', 'text', 'textPath', 'title', 'tspan', 'use', 'view' ];
 		echo strip_tags( $svg, $allowed );
+	}
+
+	/**
+	 * Get dist directory info.
+	 *
+	 * @return array ['js'=>['dir'=>'', 'url'=>''], 'css'=>['dir'=>'', 'url'=>'']]
+	 */
+	public static function get_dist_directory() {
+		$upload_dir = wp_get_upload_dir();
+
+		$base_dir = $upload_dir['basedir'];
+		$base_url = $upload_dir['baseurl'];
+
+		$css_sub_dir = '/wp-easy-dist/css';
+		$js_sub_dir  = '/wp-easy-dist/js';
+
+		$full_css_path = $base_dir . $css_sub_dir;
+		$full_js_path  = $base_dir . $js_sub_dir;
+
+		if ( ! is_dir( $full_css_path ) ) {
+			wp_mkdir_p( $full_css_path );
+		}
+
+		if ( ! is_dir( $full_js_path ) ) {
+			wp_mkdir_p( $full_js_path );
+		}
+
+		return array(
+			'css' => array(
+				'dir' => $full_css_path . '/',
+				'url' => $base_url . $css_sub_dir . '/',
+			),
+			'js'  => array(
+				'dir' => $full_js_path . '/',
+				'url' => $base_url . $js_sub_dir . '/',
+			),
+		);
 	}
 }
