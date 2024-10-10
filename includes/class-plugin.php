@@ -22,5 +22,6 @@ class Plugin extends Plugin_Base {
 		( new Router() )->init();
 		( new Template() )->init();
 		( new Override() )->init();
+		( new Settings() )->init();
 	}
 }
