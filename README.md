@@ -28,7 +28,7 @@ My brother does want to learn, and he wants to build websites as close to the "r
 
 ### Router
 
-The entry point for most people will be the themes `/router.php` file. This file determines what template is shown to the user, and whay layout file to place that template in. 
+The entry point for most people will be the themes `/router.php` file. This file determines what template is shown to the user, and what layout file to place that template in. 
 
 Layouts are located in the theme's `/layouts` directory.
 Templates are located in the theme's `/templates` directory.
@@ -51,17 +51,17 @@ return $routes;
 
 This syntax is similar to Node's Express path syntax. The key `home` is the route name, and the value is an array of `[path, template, layout]`. The `path` is the URI you are trying to match to. Note you can use a short string syntax instead of the array syntax of `name => '/path/'` for simple routes. 
 
-The `layout` is optional, and allows you to set a different layout file to wrap the template. If no layout set, the `/layouts/default.php` file is used.
+The `layout` is optional, and allows you to set a different layout file to wrap the template. If no layout is set, the `/layouts/default.php` file is used.
 
-The `template` is optional, and allows you to reuse the same template for multiple routes. If no template set, the key is used as the template name.
+The `template` is optional, and allows you to reuse the same template for multiple routes. If no template set, the route key is used as the template name.
 
 The router has a helper function `get_route_name()` that you can use to get the current active templates name.
 
 ### Single File Components
 
-THe big inovation of WP Easy is the concept of Single File Components (SFC). These SFC's have been inspired by Vue's SFC, but now they work in WordPress.
+Thr big inovation of WP Easy is the concept of Single File Components (SFC). These SFC's have been inspired by Vue's SFC, but now they work in WordPress.
 
-Page templates and components can use SFC syntax, layouts can't. And exmaple of a empty SFC is:
+Page templates and components can use SFC syntax, layouts can't. An example of an empty SFC is:
 
 ```
 <?php // Some PHP here ?>
@@ -70,6 +70,7 @@ Page templates and components can use SFC syntax, layouts can't. And exmaple of 
 </template>
 
 <style>
+    // You can use CSS, SCSS and even PHP here
     .example {}
 </style>
 
@@ -82,7 +83,7 @@ Page templates and components can use SFC syntax, layouts can't. And exmaple of 
 
 ### Layouts
 
-Layouts are the top level strucutre of the page. You will generally always have a `/layout/default.php` layout. This would contain global elements like headers or footers. It must contain a few required functions, so see the WP Easy starter theme for reference.
+Layouts are the top level strucutre of the page. You will generally always have a `/layout/default.php` layout. This would contain global elements like headers or footers. It must contain a few required functions, so see the [WP Easy starter theme](https://github.com/drewbaker/wp-easy-theme) for reference.
 
 Layouts are not Single File Components. So put your styles in main.scss and scripts in main.js. 
 
@@ -90,12 +91,12 @@ Layouts are not Single File Components. So put your styles in main.scss and scri
 
 ###  Templates & Components
 
-Templates and components work very similary. The best way to think of theme is that you are building a website like a jigsaw puzzle. The components are each a peice of the puzzle. A template is where all the indervidual pieces (components) are put together.
+Templates and components work very similary. The best way to think of theme is that you are building a website like a jigsaw puzzle. The components are each a piece of the puzzle. A template is where all the individual pieces (components) are put together.
 
 - Templates are located in the theme's `/templates` directory.
 - Components are located in the theme's `/component` directory.
 
-A template, or a component will always be a `.php` file, that determines the HTML, Styles and JS. 
+A template, or a component will always be a `.php` file, that includes the HTML, Styles and JS. 
 
 #### Templates
 
@@ -103,13 +104,9 @@ Your `/templates/work.php` might look something like this:
 
 ```
 <template>
-<?php use_component('header'); ?>
-
 <main class="work">
     <?php use_component('work-block', ['title' => 'test of title argument']); ?>
 </main>
-
-<?php use_component('footer'); ?>
 </template>
 
 <style>
@@ -140,9 +137,9 @@ $('.work').click(()=>{
 
 The `style` block is actually `SCSS`, it's an extended version of the `CSS` you've seen before. It's big advanatge is it allows for nesting, and varibles. Native CSS allows for varibles nativly too, those are better and are used in `/styles/varibles.scss`, but some advanced varibles like the media-query one used in the example can't be used with native CSS vars. 
 
-Nesting is coming to native CSS too eventually, but for now the SCSS synatx is easier to use. You can read about how [nesting works here](https://sass-lang.com/guide/#nesting).
+Nesting is coming to native CSS too eventualy, but for now the SCSS synatx is easier to use. You can read about how [nesting works here](https://sass-lang.com/guide/#nesting).
 
-The `@media #{$lt-phone}` is a custom media query defined in the `/styles/global/media-queries.scss` file. There are a few more ones defined there that will come in real handy for styling a component for different screen sizes. 
+The `@media #{$lt-phone}` is a custom media query defined in the `/styles/global/media-queries.scss` file. There are a few more defined there that will come in real handy for styling a component for different screen sizes. 
 
 If you have global styles or JS that you need, the you can use the `/styles/main.scss` and `/scripts/main.js` files for these. Any stylesheet in the `/styles/*` directory will be auto loaded on every page.
 
@@ -186,7 +183,7 @@ $args = set_defaults($args, [
 </style>
 ```
 
-It's storngly recommend that you take the approch of keeping your components as isolated as possible. Meaning, that they only know data that is passed into them via a prop. So doing something like this is correct:
+It's storngly recommend that you take the approach of keeping your components as isolated as possible. Meaning, that they only know data that is passed into them via a prop. So doing something like this is correct:
 
 ```
 <?php use_component('work-block', ['title' => get_the_title()]); ?>
