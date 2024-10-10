@@ -112,8 +112,6 @@ Your `/templates/work.php` might look something like this:
 </template>
 
 <style>
-@import 'media-queries';
-
 .work {
     background: red;
 
@@ -143,9 +141,9 @@ The `style` block is actually `SCSS`, it's an extended version of the `CSS` you'
 
 Nesting is coming to native CSS too eventually, but for now the SCSS synatx is easier to use. You can read about how [nesting works here](https://sass-lang.com/guide/#nesting).
 
-The `@media #{$lt-phone}` is a custom media query defined in the `/global/media-queries.scss` file. There are a few more ones defined there that will come in real handy for styling a component for different screen sizes. Note the `@import 'media-queries';` statment at the top of the file, that is important (NOTE: one day I'd like to remove that as a requirment but for now you need it).
+The `@media #{$lt-phone}` is a custom media query defined in the `/styles/global/media-queries.scss` file. There are a few more ones defined there that will come in real handy for styling a component for different screen sizes. 
 
-If you have global styles or JS that you need, the you can use the `/styles/main.scss` and `/scripts/main.js` files for these.
+If you have global styles or JS that you need, the you can use the `/styles/main.scss` and `/scripts/main.js` files for these. Any stylesheet in the `/styles/*` directory will be auto loaded on every page.
 
 #### Components
 
@@ -197,12 +195,10 @@ Each component can have it's own `<style>` or `<script>` block in it, just like 
 
 ### Global Styles & Scripts
 
-In all templates and components (but not layouts) you have access to Single File Component style block, and the abibility ti `@import` some useful media queries. Like so:
+In all templates and components (but not layouts) you have access to Single File Component style block, and the ability to use some useful media queries. Like so:
 
 ```
 <style>
-@import 'media-queries'; // This is needed!
-
 .example {
     background: red;
 
@@ -218,12 +214,12 @@ In all templates and components (but not layouts) you have access to Single File
 
 All templates and components can use a Single File Component style block that supports [SCSS syntax](https://devhints.io/sass). The big advantage to SCSS is the abibility to nest selectors.
 
+Any `.scss` file located `/styes/global/` will be auto loaded into all stylesheets, so it's very useful to share gloabl SASS variables that you want. That is how the default media queries work.
+
 NOTE: It is strongly recommend that you namespace all CSS under one class, and that name matchs the file name of your component or template.
 
 ```
 <style>
-@import 'media-queries';
-
 // It is strongly recommend that you namespace all CSS under one class, and that name matchs the file name of your component or template.
 .example {
     background: red;
@@ -247,7 +243,7 @@ NOTE: It is strongly recommend that you namespace all CSS under one class, and t
 
 `use_svg('logo', ['class' => 'foo'])` will render the SVG found in theme `/images/logo.svg` and give it an attribute of `class="foo"`. 
 
-Note: Any prop you pass will be added a HTML attribute on the SVG.
+Note: Any prop you pass will be added as an HTML attribute on the SVG.
 
 So the above, will be turned into this:
 ```
@@ -260,9 +256,9 @@ So the above, will be turned into this:
 
 TODO Better documentation of how JS works
 
-- Auto including of JS, anything in `/scripts/libs/` will be auto enqueued as a module
-- jQuery `$` works globally
-- How to use the included JS modules
+- Explain how auto including of JS, anything in `/scripts/libs/` will be auto enqueued as a module.
+- Explain jQuery `$` works globally
+- Explain how to use the included JS modules
 
 ### Fonts
 
@@ -283,3 +279,4 @@ TODO Better documentation of these
 - `use_outlet()`
 - `get_route_name()`
 - `set_defaults($props = [])` for setting defaults on component props
+- `set_attribute('controls', true)` for setting of HTML element attributes that need to be present or not present, like `controls` or `playsinline`
