@@ -155,7 +155,7 @@ class Utils {
 
 		preg_match_all( '/<style\b[^>]*>(.*?)<\/style>/si', $content_no_template, $styles );
 		if ( ! empty( $styles[0] ) ) {
-			self::enqueue_component_styles( $styles[1] );
+			self::enqueue_component_styles( $styles[1], $file_path );
 			$content = str_replace( $styles[0], '', $content );
 		}
 
@@ -172,16 +172,16 @@ class Utils {
 	/**
 	 * Enqueue component inline styles.
 	 *
-	 * @param array $styles Style array to register.
+	 * @param array  $styles    Style array to register.
+	 * @param string $file_path Component file path.
 	 */
-	public static function enqueue_component_styles( $styles ) {
-		$diff = array_diff( $styles, self::$printed_styles );
-		if ( ! empty( $diff ) ) {
-			$style_str = join( PHP_EOL, $diff );
-			$style_str = self::compile_scss( $style_str, ! Utils::is_debug_mode() );
+	public static function enqueue_component_styles( $styles, $file_path ) {
+		if ( ! in_array( $file_path, self::$printed_styles ) ) {
+			$style_str = join( PHP_EOL, $styles );
+			$style_str = self::compile_component_scss( $style_str, $file_path );
 			printf( '<style>%s</style>', $style_str );
 
-			self::$printed_styles = array_unique( array_merge( self::$printed_styles, $styles ) );
+			self::$printed_styles[] = $file_path;
 		}
 	}
 
@@ -313,29 +313,31 @@ class Utils {
 	/**
 	 * Return compiled string for SCSS style.
 	 *
-	 * @param string $style_str  Style string
-	 * @param bool   $with_cache Use cached data or force generate new.
+	 * @param string $style_str     Style string
+	 * @param bool   $src_file_path Component file path.
 	 *
 	 * @return string
 	 */
-	public static function compile_scss( $style_str, $with_cache = true ) {
+	public static function compile_component_scss( $style_str, $src_file_path ) {
 		static $cache = null;
 
-		$key = md5( $style_str );
-		if ( $with_cache ) {
-			// Init cache.
-			if ( $cache === null ) {
-				$cache = get_transient( 'wp_easy_component_styles' );
+		$style_str = self::get_global_scss() . $style_str;
 
-				if ( ! is_array( $cache ) ) {
-					$cache = array();
-				}
-			}
+		$key      = md5( $src_file_path );
+		$checksum = md5( $style_str );
 
-			// Check cache first.
-			if ( array_key_exists( $key, $cache ) ) {
-				return $cache[ $key ];
+		// Init cache.
+		if ( $cache === null ) {
+			$cache = get_transient( 'wp_easy_component_styles' );
+
+			if ( ! is_array( $cache ) ) {
+				$cache = array();
 			}
+		}
+
+		// Check cache first.
+		if ( array_key_exists( $key, $cache ) && $cache[ $key ]['checksum'] == $checksum ) {
+			return $cache[ $key ]['content'];
 		}
 
 		// Compile if not in cache.
@@ -344,7 +346,7 @@ class Utils {
 			$compiler = new \ScssPhp\ScssPhp\Compiler();
 			$compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
 
-			$style_str = $compiler->compileString( self::get_global_scss() . $style_str )->getCss();
+			$style_str = $compiler->compileString( $style_str )->getCss();
 		} catch ( \Exception $e ) {
 			error_log( $e->getMessage() );
 			if ( self::is_debug_mode() ) {
@@ -353,7 +355,10 @@ class Utils {
 		}
 
 		// Store into DB.
-		$cache[ $key ] = $style_str;
+		$cache[ $key ] = array(
+			'checksum' => $checksum,
+			'content'  => $style_str,
+		);
 		set_transient( 'wp_easy_component_styles', $cache, DAY_IN_SECONDS );
 
 		return $style_str;
