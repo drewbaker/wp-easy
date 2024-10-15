@@ -155,7 +155,7 @@ class Utils {
 
 		preg_match_all( '/<style\b[^>]*>(.*?)<\/style>/si', $content_no_template, $styles );
 		if ( ! empty( $styles[0] ) ) {
-			self::enqueue_component_styles( $styles[1] );
+			self::enqueue_component_styles( $styles[1], $file_path );
 			$content = str_replace( $styles[0], '', $content );
 		}
 
@@ -172,16 +172,16 @@ class Utils {
 	/**
 	 * Enqueue component inline styles.
 	 *
-	 * @param array $styles Style array to register.
+	 * @param array  $styles    Style array to register.
+	 * @param string $file_path Component file path.
 	 */
-	public static function enqueue_component_styles( $styles ) {
-		$diff = array_diff( $styles, self::$printed_styles );
-		if ( ! empty( $diff ) ) {
-			$style_str = join( PHP_EOL, $diff );
-			$style_str = self::compile_scss( $style_str, ! Utils::is_debug_mode() );
+	public static function enqueue_component_styles( $styles, $file_path ) {
+		if ( ! in_array( $file_path, self::$printed_styles ) ) {
+			$style_str = join( PHP_EOL, $styles );
+			$style_str = self::compile_component_scss( $style_str, $file_path );
 			printf( '<style>%s</style>', $style_str );
 
-			self::$printed_styles = array_unique( array_merge( self::$printed_styles, $styles ) );
+			self::$printed_styles[] = $file_path;
 		}
 	}
 
@@ -198,30 +198,38 @@ class Utils {
 			return $global_scss;
 		}
 
-		$styles_dir = get_template_directory() . '/styles/global/';
-		$scss_files = glob( $styles_dir . '*.scss' );
+		$src_files     = glob( get_template_directory() . '/styles/global/*.scss' );
+		$src_file_time = max( array_map( 'filemtime', $src_files ) ); // Latest update time.
 
-		$file_update_time = max( array_map( 'filemtime', $scss_files ) ); // current latest update time.
-		$out_file_time    = get_transient( 'wp_easy_global_scss_build_time' ); // old latest update time.
+		$out_file_path = self::get_global_scss_file_path();
+		$out_file_time = filemtime( $out_file_path );
 
-		// Use cached version if it's up to date.
-		if ( $file_update_time <= $out_file_time ) {
-			$global_scss = get_transient( 'wp_easy_global_scss' );
+		// Check if generated file is up to date.
+		if ( $src_file_time <= $out_file_time ) {
+			$global_scss = file_get_contents( $out_file_path );
 			return $global_scss;
 		}
 
 		// Generate global css.
 		$global_scss = '';
-		foreach ( $scss_files as $scss_file ) {
+		foreach ( $src_files as $scss_file ) {
 			$global_scss .= file_get_contents( $scss_file ) . PHP_EOL;
 		}
 
-		set_transient( 'wp_easy_global_scss_build_time', $file_update_time );
-		set_transient( 'wp_easy_global_scss', $global_scss );
+		// Save to file.
+		file_put_contents( $out_file_path, $global_scss );
 
 		self::purge_component_styles();
 
 		return $global_scss;
+	}
+
+	/**
+	 * Get global css dist directory path.
+	 */
+	public static function get_global_scss_file_path() {
+		$dist_dir = self::get_dist_directory();
+		return $dist_dir['css']['dir'] . 'global.scss';
 	}
 
 	/**
@@ -240,23 +248,22 @@ class Utils {
 	 */
 	public static function compile_site_styles( $dev_mode = false ) {
 
-		$src_dir   = get_template_directory() . '/styles/';
-		$src_files = glob( $src_dir . '*.scss' );
+		// Early do it to regenerate global scss file.
+		$scss_content = self::get_global_scss();
+
+		$src_dir       = get_template_directory() . '/styles/';
+		$src_files     = glob( $src_dir . '*.scss' );
+		$src_file_time = max( array_map( 'filemtime', $src_files ) ); // current latest update time.
+		$src_file_time = max( $src_file_time, filemtime( self::get_global_scss_file_path() ) ); // current latest update time.
 
 		$dist_dir      = self::get_dist_directory();
 		$out_file_name = apply_filters( 'wp_easy_global_style_name', 'general-compiled.css' );
 		$out_file_path = $dist_dir['css']['dir'] . $out_file_name;
 		$out_file_url  = $dist_dir['css']['url'] . $out_file_name;
-
-		// Early do it to regenerate global scss file.
-		$scss_content = self::get_global_scss();
-
-		$file_update_time = max( array_map( 'filemtime', $src_files ) ); // current latest update time.
-		$file_update_time = max( $file_update_time, get_transient( 'wp_easy_global_scss_build_time' ) ); // current latest update time.
-		$out_file_time    = filemtime( $out_file_path );
+		$out_file_time = filemtime( $out_file_path );
 
 		// Don't compile if files are not updated.
-		if ( file_exists( $out_file_path ) && $file_update_time <= $out_file_time ) {
+		if ( file_exists( $out_file_path ) && $src_file_time <= $out_file_time ) {
 			return array(
 				'url'     => $out_file_url,
 				'version' => $out_file_time,
@@ -313,29 +320,32 @@ class Utils {
 	/**
 	 * Return compiled string for SCSS style.
 	 *
-	 * @param string $style_str  Style string
-	 * @param bool   $with_cache Use cached data or force generate new.
+	 * @param string $style_str     Style string
+	 * @param bool   $src_file_path Component file path.
 	 *
 	 * @return string
 	 */
-	public static function compile_scss( $style_str, $with_cache = true ) {
+	public static function compile_component_scss( $style_str, $src_file_path ) {
 		static $cache = null;
 
-		$key = md5( $style_str );
-		if ( $with_cache ) {
-			// Init cache.
-			if ( $cache === null ) {
-				$cache = get_transient( 'wp_easy_component_styles' );
+		// Append global style to component style for compiling.
+		$style_str = self::get_global_scss() . $style_str;
 
-				if ( ! is_array( $cache ) ) {
-					$cache = array();
-				}
-			}
+		$key      = md5( $src_file_path );
+		$checksum = md5( $style_str );
 
-			// Check cache first.
-			if ( array_key_exists( $key, $cache ) ) {
-				return $cache[ $key ];
+		// Init cache.
+		if ( $cache === null ) {
+			$cache = get_transient( 'wp_easy_component_styles' );
+
+			if ( ! is_array( $cache ) ) {
+				$cache = array();
 			}
+		}
+
+		// Check cache first.
+		if ( array_key_exists( $key, $cache ) && $cache[ $key ]['checksum'] == $checksum ) {
+			return $cache[ $key ]['content'];
 		}
 
 		// Compile if not in cache.
@@ -344,7 +354,7 @@ class Utils {
 			$compiler = new \ScssPhp\ScssPhp\Compiler();
 			$compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
 
-			$style_str = $compiler->compileString( self::get_global_scss() . $style_str )->getCss();
+			$style_str = $compiler->compileString( $style_str )->getCss();
 		} catch ( \Exception $e ) {
 			error_log( $e->getMessage() );
 			if ( self::is_debug_mode() ) {
@@ -353,7 +363,10 @@ class Utils {
 		}
 
 		// Store into DB.
-		$cache[ $key ] = $style_str;
+		$cache[ $key ] = array(
+			'checksum' => $checksum,
+			'content'  => $style_str,
+		);
 		set_transient( 'wp_easy_component_styles', $cache, DAY_IN_SECONDS );
 
 		return $style_str;
