@@ -207,13 +207,13 @@ class Utils {
 		// Check if generated file is up to date.
 		if ( $src_file_time <= $out_file_time ) {
 			$global_scss = file_get_contents( $out_file_path );
-			return $global_scss;
+			// return $global_scss;
 		}
 
 		// Generate global css.
 		$global_scss = '';
 		foreach ( $src_files as $scss_file ) {
-			$global_scss .= file_get_contents( $scss_file ) . PHP_EOL;
+			$global_scss .= sprintf( '@import "global/%s";' . PHP_EOL, basename( $scss_file ) );
 		}
 
 		// Save to file.
@@ -269,42 +269,15 @@ class Utils {
 		}
 
 		foreach ( $src_files as $src_file ) {
-			$scss_content .= file_get_contents( $src_file ) . PHP_EOL;
+			$scss_content .= sprintf( '@import "%s";' . PHP_EOL, basename( $src_file ) );
 		}
 
 		try {
-			$dev_mode = Utils::is_debug_mode();
-
-			self::load_scss_compiler();
-			$compiler = new \ScssPhp\ScssPhp\Compiler();
-			$compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
-			$compiler->setOutputStyle( $dev_mode ? 'expanded' : 'compressed' );
-
-			// Configuration to create the debugging .map file.
-			if ( $dev_mode ) {
-				$srcmap_data = [
-					'sourceMapWriteTo'  => $out_file_path . '.map', // Absolute path to the map file.
-					'sourceMapFilename' => $out_file_name,
-					'sourceMapURL'      => $out_file_url . '.map', // URL to the map file.
-					'sourceMapBasepath' => rtrim( ABSPATH, '/' ), // Partial route to use a root.
-					'sourceRoot'        => dirname( content_url() ), // Where to redirect external files.
-				];
-				$compiler->setSourceMap( \ScssPhp\ScssPhp\Compiler::SOURCE_MAP_FILE );
-				$compiler->setSourceMapOptions( $srcmap_data );
-			}
-
-			$result = $compiler->compileString( $scss_content, $src_dir );
-
+			$result = self::run_scss_compiler( $out_file_name, $scss_content );
 			// Save the compiled file.
 			file_put_contents( $out_file_path, $result->getCss() );
 			$out_file_time = filemtime( $out_file_path );
 
-			// Save map if a source map has been created
-			if ( $map = $result->getSourceMap() ) {
-				file_put_contents( $out_file_path . '.map', $map );
-			} elseif ( file_exists( $out_file_path . '.map' ) ) { // Delete if file exists
-				unlink( $out_file_path . '.map' );
-			}
 		} catch ( \Exception $e ) {
 			error_log( $e->getMessage() );
 			if ( self::is_debug_mode() ) {
@@ -351,31 +324,7 @@ class Utils {
 
 		// Compile if not in cache.
 		try {
-			$dev_mode = Utils::is_debug_mode();
-
-			self::load_scss_compiler();
-			$compiler = new \ScssPhp\ScssPhp\Compiler();
-			$compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
-			$compiler->setOutputStyle( $dev_mode ? 'expanded' : 'compressed' );
-
-			// Configuration to create the debugging .map file.
-			if ( $dev_mode ) {
-				$dist_dir      = self::get_dist_directory();
-				$map_file_name = md5( $src_file_path ) . '.css';
-				$map_file_path = $dist_dir['css']['dir'] . $map_file_name;
-				$map_file_url  = $dist_dir['css']['url'] . $map_file_name;
-
-				$srcmap_data = [
-					'sourceMapWriteTo'  => $map_file_path . '.map', // Absolute path to the map file.
-					'sourceMapURL'      => $map_file_url . '.map', // URL to the map file.
-					'sourceMapBasepath' => rtrim( ABSPATH, '/' ), // Partial route to use a root.
-					'sourceRoot'        => dirname( content_url() ), // Where to redirect external files.
-				];
-				$compiler->setSourceMap( \ScssPhp\ScssPhp\Compiler::SOURCE_MAP_FILE );
-				$compiler->setSourceMapOptions( $srcmap_data );
-			}
-
-			$style_str = $compiler->compileString( $style_str )->getCss();
+			$style_str = self::run_scss_compiler( md5( $src_file_path ) . '.css', $style_str )->getCss();
 		} catch ( \Exception $e ) {
 			error_log( $e->getMessage() );
 			if ( self::is_debug_mode() ) {
@@ -391,6 +340,54 @@ class Utils {
 		set_transient( 'wp_easy_component_styles', $cache, DAY_IN_SECONDS );
 
 		return $style_str;
+	}
+
+	/**
+	 * Get SCSS compiler.
+	 *
+	 * @param string $out_file_name CSS map file name.
+	 * @param string $scss_content  SCSS content to compile.
+	 *
+	 * @return \ScssPhp\ScssPhp\CompilationResult
+	 */
+	private static function run_scss_compiler( $out_file_name, $scss_content ) {
+		if ( ! class_exists( '\ScssPhp\ScssPhp\Compiler' ) ) {
+			require_once __DIR__ . '/../vendor/autoload.php';
+		}
+
+		$dev_mode = Utils::is_debug_mode();
+
+		$compiler = new \ScssPhp\ScssPhp\Compiler();
+		$compiler->addImportPath( self::get_theme_file( 'styles' ) );
+		$compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
+		$compiler->setOutputStyle( $dev_mode ? 'expanded' : 'compressed' );
+
+		$dist_dir      = self::get_dist_directory();
+		$map_file_path = $dist_dir['css']['dir'] . $out_file_name . '.map';
+		$map_file_url  = $dist_dir['css']['url'] . $out_file_name . '.map';
+
+		// Configuration to create the debugging .map file.
+		if ( $dev_mode ) {
+			$srcmap_data = [
+				'sourceMapWriteTo'  => $map_file_path, // Absolute path to the map file.
+				'sourceMapURL'      => $map_file_url, // URL to the map file.
+				'sourceMapBasepath' => rtrim( ABSPATH, '/' ), // Partial route to use a root.
+				'sourceRoot'        => dirname( content_url() ), // Where to redirect external files.
+			];
+			$compiler->setSourceMap( \ScssPhp\ScssPhp\Compiler::SOURCE_MAP_FILE );
+			$compiler->setSourceMapOptions( $srcmap_data );
+		}
+
+		$result = $compiler->compileString( $scss_content );
+
+		// Save map if a source map has been created
+		if ( $map = $result->getSourceMap() ) {
+			file_put_contents( $map_file_path, $map );
+		} elseif ( file_exists( $map_file_path ) ) { // Delete if file exists
+			unlink( $map_file_path );
+		}
+
+		return $result;
 	}
 
 	private static function load_scss_compiler() {
