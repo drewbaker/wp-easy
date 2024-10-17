@@ -61,7 +61,7 @@ class Template {
 	public function enqueue_styles() {
 
 		// Build site SCSS file.
-		$compiled_site_style = Utils::compile_site_styles( Utils::is_debug_mode() );
+		$compiled_site_style = Utils::compile_site_styles();
 		wp_enqueue_style( 'wp-easy-scss-compiled', $compiled_site_style['url'], [], $compiled_site_style['version'] );
 
 		// Enqueue all CSS files in styles directory.

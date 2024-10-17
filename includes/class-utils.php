@@ -242,11 +242,9 @@ class Utils {
 	/**
 	 * Compile SCSS files. Returns generated generate css file url and time(version).
 	 *
-	 * @param bool $dev_mode Is dev mode.
-	 *
 	 * @return array ['url' => '', 'version' => ''].
 	 */
-	public static function compile_site_styles( $dev_mode = false ) {
+	public static function compile_site_styles() {
 
 		// Early do it to regenerate global scss file.
 		$scss_content = self::get_global_scss();
@@ -275,6 +273,8 @@ class Utils {
 		}
 
 		try {
+			$dev_mode = Utils::is_debug_mode();
+
 			self::load_scss_compiler();
 			$compiler = new \ScssPhp\ScssPhp\Compiler();
 			$compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
@@ -284,6 +284,7 @@ class Utils {
 			if ( $dev_mode ) {
 				$srcmap_data = [
 					'sourceMapWriteTo'  => $out_file_path . '.map', // Absolute path to the map file.
+					'sourceMapFilename' => $out_file_name,
 					'sourceMapURL'      => $out_file_url . '.map', // URL to the map file.
 					'sourceMapBasepath' => rtrim( ABSPATH, '/' ), // Partial route to use a root.
 					'sourceRoot'        => dirname( content_url() ), // Where to redirect external files.
@@ -292,7 +293,7 @@ class Utils {
 				$compiler->setSourceMapOptions( $srcmap_data );
 			}
 
-			$result = $compiler->compileString( $scss_content );
+			$result = $compiler->compileString( $scss_content, $src_dir );
 
 			// Save the compiled file.
 			file_put_contents( $out_file_path, $result->getCss() );
@@ -350,9 +351,29 @@ class Utils {
 
 		// Compile if not in cache.
 		try {
+			$dev_mode = Utils::is_debug_mode();
+
 			self::load_scss_compiler();
 			$compiler = new \ScssPhp\ScssPhp\Compiler();
 			$compiler->addImportPath( self::get_theme_file( 'global/', 'styles' ) );
+			$compiler->setOutputStyle( $dev_mode ? 'expanded' : 'compressed' );
+
+			// Configuration to create the debugging .map file.
+			if ( $dev_mode ) {
+				$dist_dir      = self::get_dist_directory();
+				$map_file_name = md5( $src_file_path ) . '.css';
+				$map_file_path = $dist_dir['css']['dir'] . $map_file_name;
+				$map_file_url  = $dist_dir['css']['url'] . $map_file_name;
+
+				$srcmap_data = [
+					'sourceMapWriteTo'  => $map_file_path . '.map', // Absolute path to the map file.
+					'sourceMapURL'      => $map_file_url . '.map', // URL to the map file.
+					'sourceMapBasepath' => rtrim( ABSPATH, '/' ), // Partial route to use a root.
+					'sourceRoot'        => dirname( content_url() ), // Where to redirect external files.
+				];
+				$compiler->setSourceMap( \ScssPhp\ScssPhp\Compiler::SOURCE_MAP_FILE );
+				$compiler->setSourceMapOptions( $srcmap_data );
+			}
 
 			$style_str = $compiler->compileString( $style_str )->getCss();
 		} catch ( \Exception $e ) {
