@@ -202,7 +202,7 @@ class Utils {
 		$src_file_time = max( array_map( 'filemtime', $src_files ) ); // Latest update time.
 
 		$out_file_path = self::get_global_scss_file_path();
-		$out_file_time = filemtime( $out_file_path );
+		$out_file_time = file_exists( $out_file_path ) ? filemtime( $out_file_path ) : 0;
 
 		// Check if generated file is up to date.
 		if ( $src_file_time <= $out_file_time ) {
@@ -258,10 +258,10 @@ class Utils {
 		$out_file_name = apply_filters( 'wp_easy_global_style_name', 'general-compiled.css' );
 		$out_file_path = $dist_dir['css']['dir'] . $out_file_name;
 		$out_file_url  = $dist_dir['css']['url'] . $out_file_name;
-		$out_file_time = filemtime( $out_file_path );
+		$out_file_time = file_exists( $out_file_path ) ? filemtime( $out_file_path ) : 0;
 
 		// Don't compile if files are not updated.
-		if ( file_exists( $out_file_path ) && $src_file_time <= $out_file_time ) {
+		if ( $src_file_time <= $out_file_time ) {
 			return array(
 				'url'     => $out_file_url,
 				'version' => $out_file_time,
