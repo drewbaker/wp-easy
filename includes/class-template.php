@@ -21,9 +21,6 @@ class Template {
 	public function init() {
 		add_filter( 'body_class', array( $this, 'body_class' ) );
 
-		// Register our custom query var
-		add_filter( 'query_vars', array( $this, 'query_vars' ) );
-
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_styles' ), 10 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
 
@@ -41,18 +38,6 @@ class Template {
 	public function body_class( $classes ) {
 		$classes[] = 'route-' . Utils::get_route_name();
 		return $classes;
-	}
-
-	/**
-	 * Register our custom query var.
-	 *
-	 * @param array
-	 *
-	 * @return array
-	 */
-	public function query_vars( $query_vars ) {
-		$query_vars[] = 'template';
-		return $query_vars;
 	}
 
 	/**
