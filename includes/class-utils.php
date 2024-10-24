@@ -587,11 +587,11 @@ class Utils {
 	public static function get_dist_directory() {
 		$upload_dir = wp_get_upload_dir();
 
-		$base_dir = $upload_dir['basedir'];
-		$base_url = $upload_dir['baseurl'];
+		$base_dir = $upload_dir['basedir'] . '/wp-easy-dist';
+		$base_url = $upload_dir['baseurl'] . '/wp-easy-dist';
 
-		$css_sub_dir = '/wp-easy-dist/css';
-		$js_sub_dir  = '/wp-easy-dist/js';
+		$css_sub_dir = '/css';
+		$js_sub_dir  = '/js';
 
 		$full_css_path = $base_dir . $css_sub_dir;
 		$full_js_path  = $base_dir . $js_sub_dir;
@@ -605,13 +605,17 @@ class Utils {
 		}
 
 		return array(
-			'css' => array(
+			'css'  => array(
 				'dir' => $full_css_path . '/',
 				'url' => $base_url . $css_sub_dir . '/',
 			),
-			'js'  => array(
+			'js'   => array(
 				'dir' => $full_js_path . '/',
 				'url' => $base_url . $js_sub_dir . '/',
+			),
+			'base' => array(
+				'dir' => $base_dir . '/',
+				'url' => $base_url . '/',
 			),
 		);
 	}
