@@ -38,7 +38,7 @@ class Utils {
 	 * @return string
 	 */
 	public static function get_route_name() {
-		return get_query_var( 'template' ) ?? 'default';
+		return get_query_var( 'template_name' ) ?? 'default';
 	}
 
 	/**
@@ -81,17 +81,17 @@ class Utils {
 	}
 
 	/**
+	 * Use layout template function.
+	 */
+	public static function use_layout() {
+		self::use_file( get_query_var( 'layout' ) );
+	}
+
+	/**
 	 * Use Outlet template function.
 	 */
 	public static function use_outlet() {
-		$template_file = get_query_var( 'template_file' );
-		if ( ! empty( $template_file ) ) {
-			ob_start();
-			include $template_file;
-			$content = ob_get_clean();
-
-			self::parse_template( $content, $template_file );
-		}
+		self::use_file( get_query_var( 'template_file' ) );
 	}
 
 	/**
@@ -101,17 +101,23 @@ class Utils {
 	 * @param array  $props Props to pass to component template.
 	 */
 	public static function use_component( $name, $props = null ) {
-		$path = Utils::get_theme_file( $name . '.php', 'components' );
+		self::use_file( Utils::get_theme_file( $name . '.php', 'components' ), $props );
+	}
 
-		if ( ! $path ) {
-			return;
+	/**
+	 * Use file.
+	 *
+	 * @param string $path  Path to file.
+	 * @param array  $props Props.
+	 */
+	private static function use_file( $path, $props = array() ) {
+		if ( ! empty( $path ) && file_exists( $path ) ) {
+			ob_start();
+			load_template( $path, false, $props );
+			$content = ob_get_clean();
+
+			self::parse_template( $content, $path );
 		}
-
-		ob_start();
-		load_template( $path, false, $props );
-		$content = ob_get_clean();
-
-		self::parse_template( $content, $path );
 	}
 
 	/**
