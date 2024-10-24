@@ -68,10 +68,11 @@ class Router {
 
 		// If no template found, then will fallback to default WP template hierarchy.
 		if ( ! $template_name ) {
-			return;
+			$template = Utils::get_theme_file( 'index.php' );
+		} else {
+			$template = Utils::get_theme_file( $template_name . '.php', 'templates' );
 		}
 
-		$template = Utils::get_theme_file( $template_name . '.php', 'templates' );
 		if ( ! $template ) {
 			$error = new \WP_Error(
 				'missing_template',
