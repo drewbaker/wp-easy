@@ -20,10 +20,10 @@ class Live_Reload {
 	public function init() {
 		if ( Utils::is_debug_mode() ) {
 			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-
-			add_action( 'wp_ajax_wp-easy-live-reload', array( $this, 'ajax_reload_handler' ) );
-			add_action( 'wp_ajax_nopriv_wp-easy-live-reload', array( $this, 'ajax_reload_handler' ) );
 		}
+
+		add_action( 'wp_ajax_wp-easy-live-reload', array( $this, 'ajax_reload_handler' ) );
+		add_action( 'wp_ajax_nopriv_wp-easy-live-reload', array( $this, 'ajax_reload_handler' ) );
 	}
 
 	/**
@@ -34,7 +34,7 @@ class Live_Reload {
 		wp_enqueue_script( 'live-reload', wp_easy_get_plugin_instance()->dir_url . '/includes/libs/php-live-reload/live-reload.js' );
 		wp_add_inline_script(
 			'live-reload',
-			sprintf( 'monitorChanges(%d, false, %s)', $delay, admin_url( 'admin-ajax.php?action=wp-easy-live-reload' ) ),
+			sprintf( 'monitorChanges(%d, false, "%s")', $delay, admin_url( 'admin-ajax.php?action=wp-easy-live-reload' ) ),
 			'after'
 		);
 	}
@@ -63,5 +63,6 @@ class Live_Reload {
 			return true;
 		};
 		require_once wp_easy_get_plugin_instance()->dir_path . '/includes/libs/php-live-reload/live-reload.php';
+		exit;
 	}
 }
