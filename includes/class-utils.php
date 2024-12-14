@@ -150,40 +150,69 @@ class Utils {
 	 * @return void
 	 */
 	private static function parse_template( $content, $file_path ) {
+
+		// Handle <template>.
 		preg_match_all( '/<template\b[^>]*>(.*?)<\/template>/si', $content, $templates );
 
-		$content_no_template = $content;
-
-		if ( ! empty( $templates[0] ) ) {
+		$template_tag_exists = ! empty( $templates[0] );
+		if ( $template_tag_exists ) {
 			$content_no_template = str_replace( $templates[0], '', $content ); // to avoid double parsing for component styles in template.
-			$content             = str_replace( $templates[0], $templates[1], $content );
+			$content             = $templates[1][0];
+		} else {
+			$content_no_template = $content;
 		}
 
+		// Handle <style>.
 		preg_match_all( '/<style\b[^>]*>(.*?)<\/style>/si', $content_no_template, $styles );
 		if ( ! empty( $styles[0] ) ) {
-			self::enqueue_component_styles( $styles[1], $file_path );
-			$content = str_replace( $styles[0], '', $content );
+			self::enqueue_component_styles( $styles[1][0], $file_path );
+
+			// Replace style tag from content string in case template tag is missing.
+			if ( ! $template_tag_exists ) {
+				$content = str_replace( $styles[0], '', $content );
+			}
 		}
 
-		// Match scripts
+		// Handle <script>.
 		preg_match_all( '/<script\b[^>]*>(.*?)<\/script>/si', $content_no_template, $scripts );
 		if ( ! empty( $scripts[0] ) ) {
 			self::enqueue_component_scripts( $scripts[1], $file_path );
-			$content = str_replace( $scripts[0], '', $content );
+
+			// Replace script tag from content string in case template tag is missing.
+			if ( ! $template_tag_exists ) {
+				$content = str_replace( $scripts[0], '', $content );
+			}
 		}
 
 		echo $content;
 	}
 
 	/**
+	 * Get style tag line number.
+	 *
+	 * @param string $file_path File path string.
+	 *
+	 * @return int
+	 */
+	private static function get_style_line_no( $file_path ) {
+		if ( ! file_exists( $file_path ) ) {
+			return 0;
+		}
+		$php_raw_content      = file_get_contents( $file_path );
+		$style_position       = strpos( $php_raw_content, '<style' );
+		$before_style_content = substr( $php_raw_content, 0, $style_position );
+
+		return count( explode( PHP_EOL, $before_style_content ) ) - 1;
+	}
+
+	/**
 	 * Enqueue component inline styles.
 	 *
-	 * @param array  $styles    Style array to register.
-	 * @param string $file_path Component file path.
+	 * @param string $style_str      Style string.
+	 * @param string $file_path      Component file path.
 	 */
-	public static function enqueue_component_styles( $styles, $file_path ) {
+	public static function enqueue_component_styles( $style_str, $file_path ) {
 		if ( ! in_array( $file_path, self::$printed_styles ) ) {
-			$style_str = join( PHP_EOL, $styles );
 			$style_str = self::compile_component_scss( $style_str, $file_path );
 			printf( '<style>%s</style>', $style_str );
 
@@ -208,18 +237,18 @@ class Utils {
 		$src_file_time = max( array_map( 'filemtime', $src_files ) ); // Latest update time.
 
 		$out_file_path = self::get_global_scss_file_path();
-		$out_file_time = filemtime( $out_file_path );
+		$out_file_time = file_exists( $out_file_path ) ? filemtime( $out_file_path ) : 0;
 
 		// Check if generated file is up to date.
 		if ( $src_file_time <= $out_file_time ) {
 			$global_scss = file_get_contents( $out_file_path );
-			// return $global_scss;
+			return $global_scss;
 		}
 
 		// Generate global css.
 		$global_scss = '';
 		foreach ( $src_files as $scss_file ) {
-			$global_scss .= sprintf( '@import "global/%s";' . PHP_EOL, basename( $scss_file ) );
+			$global_scss .= sprintf( '@import "global/%s";', basename( $scss_file ) );
 		}
 
 		// Save to file.
@@ -258,16 +287,20 @@ class Utils {
 		$src_dir       = get_template_directory() . '/styles/';
 		$src_files     = glob( $src_dir . '*.scss' );
 		$src_file_time = max( array_map( 'filemtime', $src_files ) ); // current latest update time.
-		$src_file_time = max( $src_file_time, filemtime( self::get_global_scss_file_path() ) ); // current latest update time.
+
+		$global_scss_file = self::get_global_scss_file_path();
+		if ( file_exists( $global_scss_file ) ) {
+			$src_file_time = max( $src_file_time, filemtime( $global_scss_file ) ); // current latest update time.
+		}
 
 		$dist_dir      = self::get_dist_directory();
-		$out_file_name = apply_filters( 'wp_easy_global_style_name', 'general-compiled.css' );
+		$out_file_name = self::is_debug_mode() ? 'general-compiled.css' : 'general-compiled.min.css';
 		$out_file_path = $dist_dir['css']['dir'] . $out_file_name;
 		$out_file_url  = $dist_dir['css']['url'] . $out_file_name;
-		$out_file_time = filemtime( $out_file_path );
+		$out_file_time = file_exists( $out_file_path ) ? filemtime( $out_file_path ) : 0;
 
 		// Don't compile if files are not updated.
-		if ( file_exists( $out_file_path ) && $src_file_time <= $out_file_time ) {
+		if ( $src_file_time <= $out_file_time ) {
 			return array(
 				'url'     => $out_file_url,
 				'version' => $out_file_time,
@@ -312,7 +345,7 @@ class Utils {
 		$style_str = self::get_global_scss() . $style_str;
 
 		$key      = md5( $src_file_path );
-		$checksum = md5( $style_str );
+		$checksum = md5( $style_str ) . ( self::is_debug_mode() ? 'debug' : '' );
 
 		// Init cache.
 		if ( $cache === null ) {
@@ -330,7 +363,10 @@ class Utils {
 
 		// Compile if not in cache.
 		try {
-			$style_str = self::run_scss_compiler( $style_str )->getCss();
+			if ( self::is_debug_mode() ) {
+				$style_str = str_repeat( PHP_EOL, self::get_style_line_no( $src_file_path ) ) . $style_str;
+			}
+			$style_str = self::run_scss_compiler( $style_str, $key . '.css.map', $src_file_path )->getCss();
 		} catch ( \Exception $e ) {
 			error_log( $e->getMessage() );
 			if ( self::is_debug_mode() ) {
@@ -351,17 +387,18 @@ class Utils {
 	/**
 	 * Get SCSS compiler.
 	 *
-	 * @param string $scss_content  SCSS content to compile.
-	 * @param string $map_file_name CSS map file name.
+	 * @param string $scss_content     SCSS content to compile.
+	 * @param string $map_file_name    CSS map file name.
+	 * @param string $source_file_path Source file path.
 	 *
 	 * @return \ScssPhp\ScssPhp\CompilationResult
 	 */
-	private static function run_scss_compiler( $scss_content, $map_file_name = '' ) {
+	private static function run_scss_compiler( $scss_content, $map_file_name = '', $source_file_path = null ) {
 		if ( ! class_exists( '\ScssPhp\ScssPhp\Compiler' ) ) {
 			require_once __DIR__ . '/../vendor/autoload.php';
 		}
 
-		$dev_mode = Utils::is_debug_mode();
+		$dev_mode = self::is_debug_mode();
 
 		$compiler = new \ScssPhp\ScssPhp\Compiler();
 		$compiler->addImportPath( self::get_theme_file( 'styles' ) );
@@ -390,7 +427,7 @@ class Utils {
 			}
 		}
 
-		$result = $compiler->compileString( $scss_content );
+		$result = $compiler->compileString( $scss_content, $source_file_path );
 
 		// Don't generate map file if file name is empty.
 		if ( $map_file_name ) {
@@ -428,7 +465,7 @@ class Utils {
 		$out_file_name = $out_name . '.js';
 		$out_file_path = $dist_dir['js']['dir'] . $out_file_name;
 		$out_file_url  = $dist_dir['js']['url'] . $out_file_name;
-		$out_filemtime = (int) filemtime( $out_file_path );
+		$out_filemtime = file_exists( $out_file_path ) ? (int) filemtime( $out_file_path ) : 0;
 
 		if ( $out_filemtime < $src_filemtime ) {
 			// Build component script.
@@ -593,11 +630,11 @@ class Utils {
 	public static function get_dist_directory() {
 		$upload_dir = wp_get_upload_dir();
 
-		$base_dir = $upload_dir['basedir'];
-		$base_url = $upload_dir['baseurl'];
+		$base_dir = $upload_dir['basedir'] . '/wp-easy-dist';
+		$base_url = $upload_dir['baseurl'] . '/wp-easy-dist';
 
-		$css_sub_dir = '/wp-easy-dist/css';
-		$js_sub_dir  = '/wp-easy-dist/js';
+		$css_sub_dir = '/css';
+		$js_sub_dir  = '/js';
 
 		$full_css_path = $base_dir . $css_sub_dir;
 		$full_js_path  = $base_dir . $js_sub_dir;
@@ -611,13 +648,17 @@ class Utils {
 		}
 
 		return array(
-			'css' => array(
+			'css'  => array(
 				'dir' => $full_css_path . '/',
 				'url' => $base_url . $css_sub_dir . '/',
 			),
-			'js'  => array(
+			'js'   => array(
 				'dir' => $full_js_path . '/',
 				'url' => $base_url . $js_sub_dir . '/',
+			),
+			'base' => array(
+				'dir' => $base_dir . '/',
+				'url' => $base_url . '/',
 			),
 		);
 	}
