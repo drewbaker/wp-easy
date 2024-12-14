@@ -24,6 +24,13 @@ function use_outlet() {
 }
 
 /**
+ * Wrapper function for Utils::use_layout()
+ */
+function use_layout() {
+	return \WpEasy\Utils::use_layout();
+}
+
+/**
  * Wrapper function for Utils::use_children()
  */
 function use_children( $args = [] ) {
