@@ -90,15 +90,18 @@ class Router {
 			echo $error->get_error_message();
 		}
 
+		$base_template = Utils::get_theme_file( 'template.php' );
+
 		// Now replace the template
 		add_filter(
 			'template_include',
-			function ( $old_template ) use ( $template, $template_name, $layout ) {
+			function ( $old_template ) use ( $template, $template_name, $layout, $base_template ) {
 				// Set our custom query var
-				set_query_var( 'template', $template_name );
+				set_query_var( 'template_name', $template_name );
 				set_query_var( 'template_file', $template ); // Caching it to avoid duplicate locate_template() call in use_outlet().
+				set_query_var( 'layout', $layout );
 
-				return $layout;
+				return file_exists( $base_template ) ? $base_template : $layout; // backward compatibility.
 			},
 			1
 		);
