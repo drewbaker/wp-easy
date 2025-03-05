@@ -27,7 +27,6 @@ class Override {
 
 		// Make jQuery $ work globally & remove old jQuery migrate plugin
 		add_action( 'wp_head', array( $this, 'enable_jquery_dollar' ) );
-		add_action( 'wp_default_scripts', array( $this, 'dequeue_jquery_migrate' ) );
 
 		// Custom Login Page and Admin styles.
 		add_filter( 'login_headerurl', array( $this, 'custom_loginpage_logo_link' ) );
@@ -106,18 +105,6 @@ class Override {
 	public function add_mime_types( $mimes ) {
 		$mimes['svg'] = 'image/svg+xml';
 		return $mimes;
-	}
-
-	/**
-	 * Remove jQuery Migrate auto-loading by WordPress
-	 */
-	public function dequeue_jquery_migrate( $scripts ) {
-		if ( ! is_admin() && ! empty( $scripts->registered['jquery'] ) ) {
-			$scripts->registered['jquery']->deps = array_diff(
-				$scripts->registered['jquery']->deps,
-				[ 'jquery-migrate' ]
-			);
-		}
 	}
 
 	/**
