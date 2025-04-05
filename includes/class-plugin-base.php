@@ -108,7 +108,7 @@ abstract class Plugin_Base {
 	 *
 	 * @return void
 	 */
-	public function autoload( $class ) {
+	public function autoload( $class ) { // phpcs:ignore
 		if ( ! isset( $this->autoload_matches_cache[ $class ] ) ) {
 			if ( ! preg_match( '/^(?P<namespace>.+)\\\\(?P<class>[^\\\\]+)$/', $class, $matches ) ) {
 				$matches = false;
