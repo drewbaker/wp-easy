@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <ruleset name="WP">
     <description>My custom coding standard.</description>
+    <exclude-pattern>vendor/*</exclude-pattern>
+    <exclude-pattern>includes/libs/*</exclude-pattern>
     <rule ref="WordPress-Core">
         <!-- <exclude name="PEAR.Commenting.FileComment.Missing"/> -->
         <exclude name="WordPress.PHP.YodaConditions.NotYoda"/>
-        <exclude name="WordPress.PHP.StrictComparisons"/>
         <exclude name="WordPress.PHP.StrictInArray"/>
         <exclude name="WordPress.WP.I18n.MissingTranslatorsComment"/>
         <exclude name="WordPress.CodeAnalysis.AssignmentInCondition.Found"/>
@@ -13,5 +14,7 @@
         <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
         <exclude name="Squiz.PHP.DisallowMultipleAssignments.FoundInControlStructure"/>
         <exclude name="PSR2.ControlStructures.SwitchDeclaration.TerminatingComment"/>
+        <exclude name="Universal.Operators.DisallowShortTernary.Found"/>
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax.Found"/>
     </rule>
 </ruleset>

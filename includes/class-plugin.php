@@ -8,7 +8,7 @@
 
 namespace WpEasy;
 
-use \WpEasy\Plugin_Base;
+use WpEasy\Plugin_Base;
 
 /**
  * Class Plugin
