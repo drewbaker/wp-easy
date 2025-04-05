@@ -151,6 +151,13 @@ class Utils {
 	 */
 	private static function parse_template( $content, $file_path ) {
 
+		// Handle <head>.
+		if ( preg_match( '/<head\b[^>]*>(.*?)<\/head>/si', $content, $matches ) ) {
+			$head_content = $matches[1];
+			$content      = str_replace( $matches[0], '', $content );
+			add_filter('wp_easy_custom_head', fn ($old_content) => $old_content . $head_content);
+		}
+
 		// Handle <template>.
 		preg_match_all( '/<template\b[^>]*>(.*?)<\/template>/si', $content, $templates );
 
