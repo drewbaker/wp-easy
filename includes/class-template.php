@@ -26,6 +26,8 @@ class Template {
 
 		add_action( 'the_post', array( $this, 'filter_post' ) );
 		add_action( 'the_posts', array( $this, 'filter_posts' ) );
+
+		add_action( 'wp_head', array( $this, 'print_component_custom_head' ) );
 	}
 
 	/**
@@ -139,5 +141,11 @@ class Template {
 	 */
 	public function filter_post( $post ) {
 		$post = Utils::expand_post_object( $post );
+	}
+
+	public function print_component_custom_head() {
+		echo '<!-- wp-easy custom head -->';
+		echo apply_filters( 'wp_easy_custom_head', '' );
+		echo '<!-- /wp-easy custom head -->';
 	}
 }
