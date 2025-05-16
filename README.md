@@ -65,6 +65,10 @@ Page templates and components can use SFC syntax, layouts can't. An example of a
 
 ```
 <?php // Some PHP here ?>
+<head>
+     <!-- Anything you put in here will be added to the head, good for scripts -->
+</head>
+
 <template>
     <div class="example">Some HTML in here</div>
 </template>
