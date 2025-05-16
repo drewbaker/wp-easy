@@ -21,33 +21,34 @@ class Utils {
 	 *
 	 * @var array
 	 */
-	public static $printed_styles = array();
+	private static $printed_styles = array();
 
 	/**
-	 * Is debug mode enabled.
+	 * Check if debug mode is enabled.
 	 *
 	 * @return bool
 	 */
 	public static function is_debug_mode() {
-		return defined( 'WP_DEBUG' ) && true === WP_DEBUG;
+		return defined( 'WP_DEBUG' ) && WP_DEBUG;
 	}
 
 	/**
-	 * Get route name.
+	 * Get route name from query var.
 	 *
 	 * @return string
 	 */
 	public static function get_route_name() {
-		return get_query_var( 'template_name' ) ?? 'default';
+		$template_name = get_query_var( 'template_name' );
+		return $template_name ? $template_name : 'default';
 	}
 
 	/**
-	 * Check and get theme file path if exists. Check child theme and parent theme.
+	 * Get the theme file path if exists, checking child and parent themes.
 	 *
-	 * @param string $file    File name.
-	 * @param string $sub_dir Directory name.
+	 * @param string $file    File name or path relative to theme directory.
+	 * @param string $sub_dir Optional subdirectory name within the theme.
 	 *
-	 * @return string|false
+	 * @return string|false The absolute path to the file if found, false otherwise.
 	 */
 	public static function get_theme_file( $file, $sub_dir = '' ) {
 		// Load global variables for theme path.
@@ -57,11 +58,13 @@ class Utils {
 			wp_set_template_globals();
 		}
 
+		// Normalize the file path
 		$relative_path = ltrim( $file, '/\\' );
 		if ( $sub_dir ) {
 			$relative_path = trailingslashit( ltrim( $sub_dir, '/\\' ) ) . $relative_path;
 		}
 
+		// First check in child theme
 		$path = trailingslashit( $wp_stylesheet_path ) . $relative_path;
 		if ( file_exists( $path ) ) {
 			return $path;
@@ -77,18 +80,27 @@ class Utils {
 			}
 		}
 
+		// File not found in either theme
 		return false;
 	}
 
 	/**
-	 * Use layout template function.
+	 * Use layout template.
+	 *
+	 * Loads a layout template based on the 'layout' query variable.
+	 *
+	 * @return void
 	 */
 	public static function use_layout() {
 		self::use_file( get_query_var( 'layout' ) );
 	}
 
 	/**
-	 * Use Outlet template function.
+	 * Use Outlet template.
+	 *
+	 * Loads a template file based on the 'template_file' query variable.
+	 *
+	 * @return void
 	 */
 	public static function use_outlet() {
 		self::use_file( get_query_var( 'template_file' ) );
@@ -101,14 +113,17 @@ class Utils {
 	 * @param array  $props Props to pass to component template.
 	 */
 	public static function use_component( $name, $props = null ) {
-		self::use_file( Utils::get_theme_file( $name . '.php', 'components' ), $props );
+		$file_path = self::get_theme_file( $name . '.php', 'components' );
+		if ( $file_path ) {
+			self::use_file( $file_path, $props );
+		}
 	}
 
 	/**
-	 * Use file.
+	 * Use file with optional props.
 	 *
 	 * @param string $path  Path to file.
-	 * @param array  $props Props.
+	 * @param array  $props Props to pass.
 	 */
 	private static function use_file( $path, $props = array() ) {
 		if ( ! empty( $path ) && file_exists( $path ) ) {
@@ -121,28 +136,38 @@ class Utils {
 	}
 
 	/**
-	 * Function that works like get_posts, but for children of the current post
-	 * Also adds some default values to the post object
+	 * Get child posts of the current post.
+	 *
+	 * Works like get_posts but specifically for children of the current post.
+	 * Also adds some default values to the post object.
+	 *
+	 * @param array $args Optional. Query arguments to override defaults.
+	 * @return array Array of post objects.
 	 */
-	public static function use_children( $args = [] ) {
+	public static function use_children( $args = array() ) {
 		global $post;
 
-		$defaults = [
+		// Ensure we have a valid post object
+		if ( ! $post || ! is_object( $post ) || ! isset( $post->ID ) ) {
+			return array();
+		}
+
+		$defaults = array(
 			'post_type'      => 'any',
 			'post_parent'    => $post->ID,
 			'posts_per_page' => -1,
 			'order'          => 'ASC',
 			'orderby'        => 'menu_order',
-		];
+		);
 		$args     = wp_parse_args( $args, $defaults );
 
 		$posts = new \WP_Query( $args );
 
-		return $posts->posts ?? [];
+		return $posts->posts ?? array();
 	}
 
 	/**
-	 * Parse template file.
+	 * Parse template content, handle <head>, <template>, <style>, and <script> tags.
 	 *
 	 * @param string $content   Content string.
 	 * @param string $file_path File path.
@@ -150,6 +175,12 @@ class Utils {
 	 * @return void
 	 */
 	private static function parse_template( $content, $file_path ) {
+		// Handle <head>.
+		if ( preg_match( '/<head\b[^>]*>(.*?)<\/head>/si', $content, $matches ) ) {
+			$head_content = $matches[1];
+			$content      = str_replace( $matches[0], '', $content );
+			add_filter( 'wp_easy_custom_head', fn ( $old_content ) => $old_content . $head_content );
+		}
 
 		// Handle <head>.
 		if ( preg_match( '/<head\b[^>]*>(.*?)<\/head>/si', $content, $matches ) ) {
@@ -364,7 +395,7 @@ class Utils {
 		}
 
 		// Check cache first.
-		if ( array_key_exists( $key, $cache ) && $cache[ $key ]['checksum'] == $checksum ) {
+		if ( array_key_exists( $key, $cache ) && $cache[ $key ]['checksum'] === $checksum ) {
 			return $cache[ $key ]['content'];
 		}
 
@@ -422,13 +453,13 @@ class Utils {
 
 			// Configuration to create the debugging .map file.
 			if ( $dev_mode ) {
-				$srcmap_data = [
+				$srcmap_data = array(
 					'sourceMapWriteTo'  => $map_file_path, // Absolute path to the map file.
 					'sourceMapURL'      => $map_file_url, // URL to the map file.
 					'sourceMapBasepath' => rtrim( str_replace( '\\', '/', ABSPATH ), '/' ), // Partial route to use a root.
 					'sourceRoot'        => dirname( content_url() ), // Where to redirect external files.
 					'sourceMapRootpath' => '',
-				];
+				);
 				$compiler->setSourceMap( \ScssPhp\ScssPhp\Compiler::SOURCE_MAP_FILE );
 				$compiler->setSourceMapOptions( $srcmap_data );
 			}
@@ -439,7 +470,8 @@ class Utils {
 		// Don't generate map file if file name is empty.
 		if ( $map_file_name ) {
 			// Save map if a source map has been created
-			if ( $map = $result->getSourceMap() ) {
+			$map = $result->getSourceMap();
+			if ( $map ) {
 				file_put_contents( $map_file_path, $map );
 			} elseif ( file_exists( $map_file_path ) ) { // Delete if file exists
 				unlink( $map_file_path );
@@ -500,31 +532,55 @@ class Utils {
 		return $favicon_url;
 	}
 
-	/*
-	* Get the next or previous sibling page (or any post type)
-	*/
-	public static function get_adjacent_sibling( $post_id, $direction = 'next', $args = [
+	/**
+	 * Get the next or previous sibling page (or any post type).
+	 *
+	 * Retrieves the adjacent sibling post based on the specified direction.
+	 * Supports looping around to the first/last post when at the beginning/end.
+	 *
+	 * @param int    $post_id  The ID of the current post.
+	 * @param string $direction The direction to look: 'next' or 'prev'/'previous'.
+	 * @param array  $args     Optional. Query arguments to override defaults.
+	 * @return \WP_Post|false The adjacent post object or false if not found.
+	 */
+	public static function get_adjacent_sibling( $post_id, $direction = 'next', $args = array(
 		'post_type' => 'page',
 		'orderby'   => 'menu_order',
-	] ) {
-		$post    = get_post( $post_id );
-		$is_next = $direction == 'next';
-		$is_prev = $direction == 'prev' || $direction == 'previous';
+	) ) {
+		$post = get_post( $post_id );
+
+		// Return false if post doesn't exist
+		if ( ! $post ) {
+			return false;
+		}
+
+		$is_next = $direction === 'next';
+		$is_prev = $direction === 'prev' || $direction === 'previous';
 
 		// Get all siblings, respect supplied args
-		$defaults = [
+		$defaults = array(
 			'post_type'      => get_post_type( $post ),
 			'posts_per_page' => -1,
 			'order'          => 'ASC',
 			'orderby'        => 'menu_order',
 			'post_parent'    => $post->post_parent,
 			'fields'         => 'ids',
-		];
+		);
 		$args     = wp_parse_args( $args, $defaults );
 		$siblings = get_posts( $args );
 
+		// Return false if no siblings found
+		if ( empty( $siblings ) ) {
+			return false;
+		}
+
 		// Find where current post is in the array
 		$current = array_search( $post->ID, $siblings );
+
+		// Return false if current post not found in siblings
+		if ( $current === false ) {
+			return false;
+		}
 
 		// Get the adjacent post
 		if ( $is_next ) {
@@ -535,10 +591,15 @@ class Utils {
 
 		// Loop around if at the end
 		$found = count( $siblings );
-		if ( $current == 0 and $is_prev ) {
+		if ( $current === 0 && $is_prev ) {
 			$adjacent_post_id = $siblings[ $found - 1 ];
-		} elseif ( $current == $found - 1 and $is_next ) {
+		} elseif ( $current === $found - 1 && $is_next ) {
 			$adjacent_post_id = $siblings[0];
+		}
+
+		// Return false if no adjacent post found
+		if ( ! $adjacent_post_id ) {
+			return false;
 		}
 
 		return self::expand_post_object( get_post( $adjacent_post_id ) );
@@ -605,27 +666,46 @@ class Utils {
 	}
 
 	/**
-	 * Use a component, supporting args and loading styles and scripts
+	 * Include and output an SVG file with optional attributes.
 	 *
-	 * @param string $name  SVG filename, without extension.
-	 * @param array  $props HTML attributes to pass to the SVG
+	 * Loads an SVG file from the theme's images directory and outputs it with
+	 * optional HTML attributes. Strips XML declarations and other non-SVG tags
+	 * for security and compatibility.
+	 *
+	 * @param string $name  SVG filename without extension.
+	 * @param array  $attrs Optional. HTML attributes to add to the SVG element.
+	 * @return void
 	 */
 	public static function use_svg( $name, $attrs = null ) {
-		$svg = file_get_contents( get_template_directory() . '/images/' . $name . '.svg' );
+		$svg_path = get_template_directory() . '/images/' . $name . '.svg';
+
+		// Check if file exists
+		if ( ! file_exists( $svg_path ) ) {
+			error_log( sprintf( 'SVG file not found: %s', $svg_path ) );
+			return;
+		}
+
+		$svg = file_get_contents( $svg_path );
+
+		// Check if file content is valid
+		if ( $svg === false ) {
+			error_log( sprintf( 'Failed to read SVG file: %s', $svg_path ) );
+			return;
+		}
 
 		// Add any props as HTML attributes to the SVG
-		if ( $attrs ) {
+		if ( $attrs && is_array( $attrs ) ) {
 			$attrs_output = '';
 
 			foreach ( $attrs as $key => $value ) {
-				$attrs_output .= $key . '="' . $value . '" ';
+				$attrs_output .= esc_attr( $key ) . '="' . esc_attr( $value ) . '" ';
 			}
 
 			$svg = str_replace( '<svg ', '<svg ' . $attrs_output, $svg );
 		}
 
 		// SEE https://clicknathan.com/web-design/strip-xml-version-from-svg-file-with-php/
-		$allowed = [ 'svg', 'g', 'path', 'a', 'animate', 'a', 'animate', 'animateMotion', 'animateTransform', 'circle', 'clipPath', 'defs', 'desc', 'ellipse', 'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite', 'feConvolveMatrix', 'feDiffuseLighting', 'feDisplacementMap', 'feDistantLight', 'feDropShadow', 'feFlood', 'feFuncA', 'feFuncB', 'feFuncG', 'feFuncR', 'feGaussianBlur', 'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'fePointLight', 'feSpecularLighting', 'feSpotLight', 'feTile', 'feTurbulence', 'filter', 'foreignObject', 'image', 'line', 'linearGradient', 'marker', 'mask', 'metadata', 'mpath', 'path', 'pattern', 'polygon', 'polyline', 'radialGradient', 'rect', 'script', 'set', 'stop', 'style', 'svg', 'switch', 'symbol', 'text', 'textPath', 'title', 'tspan', 'use', 'view' ];
+		$allowed = array( 'svg', 'g', 'path', 'a', 'animate', 'a', 'animate', 'animateMotion', 'animateTransform', 'circle', 'clipPath', 'defs', 'desc', 'ellipse', 'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite', 'feConvolveMatrix', 'feDiffuseLighting', 'feDisplacementMap', 'feDistantLight', 'feDropShadow', 'feFlood', 'feFuncA', 'feFuncB', 'feFuncG', 'feFuncR', 'feGaussianBlur', 'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'fePointLight', 'feSpecularLighting', 'feSpotLight', 'feTile', 'feTurbulence', 'filter', 'foreignObject', 'image', 'line', 'linearGradient', 'marker', 'mask', 'metadata', 'mpath', 'path', 'pattern', 'polygon', 'polyline', 'radialGradient', 'rect', 'script', 'set', 'stop', 'style', 'svg', 'switch', 'symbol', 'text', 'textPath', 'title', 'tspan', 'use', 'view' );
 		echo strip_tags( $svg, $allowed );
 	}
 

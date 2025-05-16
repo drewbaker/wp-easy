@@ -8,7 +8,7 @@
 
 namespace WpEasy;
 
-use \WpEasy\Libs\Path_To_Regexp;
+use WpEasy\Libs\Path_To_Regexp;
 
 /**
  * Class Router
