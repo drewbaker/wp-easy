@@ -24,5 +24,6 @@ class Plugin extends Plugin_Base {
 		( new Override() )->init();
 		( new Settings() )->init();
 		( new Live_Reload() )->init();
+		( new Acf() )->init();
 	}
 }
