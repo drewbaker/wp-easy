@@ -67,20 +67,84 @@ class Acf {
 	 * @return array
 	 */
 	public function rule_values( $values, $rule ) {
-		if ( in_array( $rule['param'], array( self::POST_IS_TREE, self::PAGE_IS_TREE ) ) ) {
-			return $this->tree_location_rules_values( $values, $rule );
+		switch ( $rule['param'] ) {
+			case self::POST_IS_TREE:
+			case self::PAGE_IS_TREE:
+				return $this->rules_values_tree_location( $values, $rule );
+			case self::POST_HAS_CHILD:
+			case self::PAGE_HAS_CHILD:
+				return $this->rules_values_has_children( $values, $rule );
+			case 'page_parent':
+				return $this->rule_values_no_parent( $values );
+			default:
+				return $this->rule_values_cpt( $values, $rule );
+		}
+	}
+
+	/**
+	 * This adds the options on the right <select>.
+	 * You can add more options for top level pages to test agaisnt here.
+	 *
+	 * @param array $values Rule values.
+	 * @param array $rule   Rule.
+	 *
+	 * @return array
+	 */
+	private function rules_values_tree_location( $values, $rule ) {
+		// Get all top level pages/CPTs.
+		$pages = get_posts(
+			array(
+				'post_parent'    => 0,
+				'post_type'      => self::PAGE_IS_TREE === $rule['param'] ? array( 'page' ) : array_column( $this->custom_post_types(), 'name' ),
+				'posts_per_page' => 1000, // Limit this just in case.
+				'orderby'        => 'type name',
+				'order'          => 'ASC',
+			)
+		);
+
+		// Build menu for ACF filter rule.
+		foreach ( $pages as $page ) {
+			$values[ 'post_id_' . $page->ID ] = $page->post_type . ': ' . $page->post_title;
 		}
 
-		if ( in_array( $rule['param'], array( self::POST_HAS_CHILD, self::PAGE_HAS_CHILD ) ) ) {
-			return $this->has_child_location_rules_values( $values, $rule );
-		}
+		return $values;
+	}
 
-		if ( 'page_parent' === $rule['param'] ) {
-			$values[ PHP_INT_MAX ] = 'No Parent';
-			return $values;
-		}
+	/**
+	 * This adds the options on the right <select>.
+	 * You can add more options for top level pages to test agaisnt here.
+	 *
+	 * @param array $values Rule values.
+	 * @param array $rule   Rule.
+	 *
+	 * @return array
+	 */
+	private function rules_values_has_children( $values, $rule ) {
+		return 'Has Children';
+	}
 
-		// Custom post type location rule values.
+	/**
+	 * Add no parent option to page location rule.
+	 *
+	 * @param array $values Rule values.
+	 *
+	 * @return array
+	 */
+	private function rule_values_no_parent( $values ) {
+		$values[ PHP_INT_MAX ] = 'No Parent';
+		return $values;
+	}
+
+	/**
+	 * Custom ACF filter values.
+	 * This adds the options on the right <select>.
+	 *
+	 * @param array $values Rule values.
+	 * @param array $rule   Rule.
+	 *
+	 * @return array
+	 */
+	private function rule_values_cpt( $values, $rule ) {
 		$rule_arr = $this->parse_key( $rule['param'] );
 		if ( $rule_arr && in_array( $rule_arr['cpt_name'], array_column( $this->custom_post_types(), 'name' ) ) ) {
 			$choices = array();
@@ -127,80 +191,18 @@ class Acf {
 			return $result;
 		}
 
-		if ( in_array( $rule['param'], array( self::POST_IS_TREE, self::PAGE_IS_TREE ) ) ) {
-			return $this->tree_location_rule_match( $result, $rule );
+		switch ( $rule['param'] ) {
+			case self::POST_IS_TREE:
+			case self::PAGE_IS_TREE:
+				return $this->rule_match_tree_location( $result, $rule );
+			case self::POST_HAS_CHILD:
+			case self::PAGE_HAS_CHILD:
+				return $this->rule_match_has_children( $result, $rule );
+			case 'page_parent':
+				return $this->rule_match_no_parent( $result, $rule );
+			default:
+				return $this->rule_match_cpt( $result, $rule );
 		}
-
-		if ( in_array( $rule['param'], array( self::POST_HAS_CHILD, self::PAGE_HAS_CHILD ) ) ) {
-			return $this->has_child_location_rule_match( $result, $rule );
-		}
-
-		if ( 'page_parent' === $rule['param'] ) {
-			if ( $rule['value'] != PHP_INT_MAX || ! isset( $screen['post_id'] ) ) { // phpcs:ignore
-				return $result;
-			}
-
-			$post = get_post( $screen['post_id'] );
-			if ( ! $post || $post->post_type !== 'page' ) {
-				return false;
-			}
-
-			return empty( $post->post_parent );
-		}
-
-		// Custom post type location rule match.
-		$post_type = get_post_type( $post_id );
-		$rule_arr  = $this->parse_key( $rule['param'] );
-		if ( $rule_arr && $rule_arr['cpt_name'] === $post_type ) {
-			switch ( $rule_arr['surfix'] ) {
-				case self::SURFIX_PARENT:
-					$parent = get_post_parent( $post_id );
-					return $parent ? $parent->ID == $rule['value'] : empty( $rule['value'] ); // phpcs:ignore
-				case self::SURFIX_TREE:
-					$ancestors   = get_ancestors( $post_id, $post_type, 'post_type' );
-					$ancestor_id = $rule['value'];
-					$in_tree     = ( $ancestor_id == $post_id ) || in_array( $ancestor_id, $ancestors ); // phpcs:ignore
-
-					switch ( $rule['operator'] ) {
-						case '==':
-							return $in_tree;
-						case '!=':
-							return ! $in_tree;
-					}
-					return false;
-			}
-		}
-
-		return $result;
-	}
-
-	/**
-	 * This adds the options on the right <select>.
-	 * You can add more options for top level pages to test agaisnt here.
-	 *
-	 * @param array $values Rule values.
-	 * @param array $rule   Rule.
-	 *
-	 * @return array
-	 */
-	private function tree_location_rules_values( $values, $rule ) {
-		// Get all top level pages/CPTs.
-		$pages = get_posts(
-			array(
-				'post_parent'    => 0,
-				'post_type'      => self::PAGE_IS_TREE === $rule['param'] ? array( 'page' ) : array_column( $this->custom_post_types(), 'name' ),
-				'posts_per_page' => 1000, // Limit this just in case.
-				'orderby'        => 'type name',
-				'order'          => 'ASC',
-			)
-		);
-
-		// Build menu for ACF filter rule.
-		foreach ( $pages as $page ) {
-			$values[ 'post_id_' . $page->ID ] = $page->post_type . ': ' . $page->post_title;
-		}
-
-		return $values;
 	}
 
 	/**
@@ -211,7 +213,7 @@ class Acf {
 	 *
 	 * @return array
 	 */
-	private function tree_location_rule_match( $result, $rule ) {
+	private function rule_match_tree_location( $result, $rule ) {
 
 		// Abort if no post ID.
 		$post_id = $this->get_current_post_id();
@@ -235,19 +237,6 @@ class Acf {
 	}
 
 	/**
-	 * This adds the options on the right <select>.
-	 * You can add more options for top level pages to test agaisnt here.
-	 *
-	 * @param array $values Rule values.
-	 * @param array $rule   Rule.
-	 *
-	 * @return array
-	 */
-	public function has_child_location_rules_values( $values, $rule ) {
-		return 'Has Children';
-	}
-
-	/**
 	 * Custom ACF rule match.
 	 *
 	 * @param bool  $result The match result.
@@ -255,7 +244,7 @@ class Acf {
 	 *
 	 * @return array
 	 */
-	public function has_child_location_rule_match( $result, $rule ) {
+	private function rule_match_has_children( $result, $rule ) {
 
 		$post_id = $this->get_current_post_id();
 
@@ -274,6 +263,59 @@ class Acf {
 				return ! empty( $children );
 			case '!=':
 				return empty( $children );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * No-parent page location rule match.
+	 *
+	 * @param bool  $result The match result.
+	 * @param array $rule The location rule.
+	 * @param array $screen The screen args.
+	 *
+	 * @return array
+	 */
+	private function rule_match_no_parent( $result, $rule ) {
+		if ( $rule['value'] == PHP_INT_MAX ) { // phpcs:ignore
+			return empty( get_post_parent( $this->get_current_post_id() ) );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Custom ACF rule match.
+	 *
+	 * @param bool  $result The match result.
+	 * @param array $rule The location rule.
+	 *
+	 * @return array
+	 */
+	private function rule_match_cpt( $result, $rule ) {
+		$post_id = $this->get_current_post_id();
+
+		$post_type = get_post_type( $post_id );
+		$rule_arr  = $this->parse_key( $rule['param'] );
+		if ( $rule_arr && $rule_arr['cpt_name'] === $post_type ) {
+			switch ( $rule_arr['surfix'] ) {
+				case self::SURFIX_PARENT:
+					$parent = get_post_parent( $post_id );
+					return $parent ? $parent->ID == $rule['value'] : empty( $rule['value'] ); // phpcs:ignore
+				case self::SURFIX_TREE:
+					$ancestors   = get_ancestors( $post_id, $post_type, 'post_type' );
+					$ancestor_id = $rule['value'];
+					$in_tree     = ( $ancestor_id == $post_id ) || in_array( $ancestor_id, $ancestors ); // phpcs:ignore
+
+					switch ( $rule['operator'] ) {
+						case '==':
+							return $in_tree;
+						case '!=':
+							return ! $in_tree;
+					}
+					return false;
+			}
 		}
 
 		return $result;
