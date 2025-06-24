@@ -186,7 +186,7 @@ class Utils {
 		if ( preg_match( '/<head\b[^>]*>(.*?)<\/head>/si', $content, $matches ) ) {
 			$head_content = $matches[1];
 			$content      = str_replace( $matches[0], '', $content );
-			add_filter('wp_easy_custom_head', fn ($old_content) => $old_content . $head_content);
+			add_filter( 'wp_easy_custom_head', fn ( $old_content ) => $old_content . $head_content );
 		}
 
 		// Handle <template>.
