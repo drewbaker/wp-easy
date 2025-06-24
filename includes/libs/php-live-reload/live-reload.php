@@ -26,7 +26,14 @@ else{
         return array_unique($files);
     }
 
-    $files = fileList($watchDir, $extensions, $excludePathsFilter, $excludeFilesFilter);
+    if (!is_array($watchDir)) {
+        $watchDir = array($watchDir);
+    }
+
+    $files = array();
+    foreach ($watchDir as $dir) {
+        $files = array_merge($files, fileList($dir, $extensions, $excludePathsFilter, $excludeFilesFilter));
+    }
 
     if (!$files) {
         $error = true;

@@ -42,7 +42,12 @@ class Live_Reload {
 
 		$extensions = array( 'php', 'js', 'css', 'scss' );
 		$dataFile   = $dist_dir['base']['dir'] . 'live-reload.json';
-		$watchDir   = get_stylesheet_directory();
+		$watchDir   = array_unique(
+			array(
+				get_stylesheet_directory(),
+				get_template_directory(),
+			)
+		);
 
 		$exclude_files = array();
 		$exclude_paths = array( '.git', 'images', 'vendor', 'node_modules' );
