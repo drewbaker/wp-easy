@@ -11,18 +11,22 @@ A framework for building modern WordPress themes—without the hassle of modern 
 - [Getting Started](#getting-started)
 - [Router](#router)
 - [Templates & Components](#templates--components)
-  - [Single File Components (SFC)](#single-file-components)
+  - [How SFCs Work](#how-sfcs-work)
   - [Layouts](#layouts)
   - [Templates](#templates)
   - [Components](#components)
 - [Styles & Scripts](#styles--scripts)
-  - [Global Styles & Scripts](#global-styles--scripts)
+  - [Key Features](#key-features)
   - [SCSS Support](#scss-support)
-  - [JavaScript](#javascript)
-  - [Caching](#caching)
-- [Helper Functions](#helper-functions)
+  - [Styles in `/styles/` Directory](#styles-in-styles-directory)
+  - [Scripts in `/scripts/` Directory](#scripts-in-scripts-directory)
 - [SVG Usage](#svg-usage)
 - [Live Reload](#live-reload)
+- [Helper Functions](#helper-functions)
+  - [Routing & Layout](#routing--layout)
+  - [Components](#components-1)
+  - [SVGs](#svgs)
+  - [Arguments & Attributes](#arguments--attributes)
 
 ---
 
@@ -276,8 +280,8 @@ WP Easy makes managing styles and scripts simple and modern, with support for SC
 
 - **Component JS as modules:** Component JS files are enqueued as ES modules using `wp_enqueue_script_module()`, not inline, enabling [importmap](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/importmap).
 - **Main script file:** `/scripts/main.js` is the entry point for site-wide scripts.
-- **Utility scripts:** All JS files in `/scripts/` and `/scripts/utils/` are enqueued as modules and set as dependencies of the main script.
-- **Library scripts:** All scripts in `/scripts/libs/` are auto-enqueued as modules.
+- **Utility scripts:** All JS files in `/scripts/` and `/scripts/utils/` are registered as modules and set as dependencies of the main script.
+- **Library scripts:** All scripts in `/scripts/libs/` are auto-enqueued.
 
 ---
 
@@ -287,48 +291,6 @@ WP Easy makes managing styles and scripts simple and modern, with support for SC
 - Take advantage of global and site-wide files for shared styles and functionality.
 
 ---
-
-## Helper Functions
-
-WP Easy provides a set of global helper functions to make building templates and components easier, more modular, and more maintainable. These helpers streamline common tasks such as rendering components, managing layouts, handling SVGs, and working with arguments.
-
-### Routing & Layout
-
-- **get_route_name()**
-  - Returns the current active route's name.
-  - *Usage:* `if (get_route_name() === 'home') { /* ... */ }`
-- **use_layout()**
-  - Renders the current layout file. Layout is determined by router file. The fallback layout name is 'default'. Typically used internally in theme's `template.php`, but can be called to force a layout render.
-- **use_outlet()**
-  - Outputs the child content inside a layout (similar to a slot in other frameworks).
-- **use_children( $args = [] )**
-  - Returns child posts of current post, passing optional wp_query arguments.
-
-### Components
-
-- **use_component( $name, $props = null )**
-  - Renders a component by name, passing optional props/arguments.
-  - *Usage:* `use_component('work-block', ['title' => 'Test title']);`
-
-### SVGs
-
-- **use_svg( $name, $args = [] )**
-  - Renders an inline SVG from the `/images` directory, with optional attributes (like class, width, etc).
-  - *Usage:* `use_svg('logo', ['class' => 'header-logo']);`
-
-### Arguments & Attributes
-
-- **set_defaults( $args, $defaults )**
-  - Merges user-supplied arguments with default values for components or templates.
-  - *Usage:* `$args = set_defaults($args, ['title' => 'Default Title']);`
-- **set_attribute( $att_name, $condition )**
-  - Conditionally adds an attribute to an HTML element if the condition is true.
-  - *Usage:* `set_attribute('disabled', !$is_enabled);`
-
----
-
-These helpers are available globally in your templates, components, and layouts, making it easy to build dynamic, maintainable WordPress themes with WP Easy.
-
 
 ## SVG Usage
 
@@ -395,4 +357,59 @@ The live reload feature watches for changes in all theme/child-theme sub directo
 ### Disabling Live Reload
 
 To disable live reload in production:
+```php
+define('WP_DEBUG', false);
 ```
+
+---
+
+## Helper Functions
+
+WP Easy provides a set of global helper functions to make building templates and components easier, more modular, and more maintainable. These helpers streamline common tasks such as rendering components, managing layouts, handling SVGs, and working with arguments.
+
+### Routing & Layout
+
+- **get_route_name()**
+  - Returns the current active route's name.
+  - *Usage:* `if (get_route_name() === 'home') { /* ... */ }`
+- **use_layout()**
+  - Renders the current layout file. Layout is determined by router file. The fallback layout name is 'default'. Typically used internally in theme's `template.php`, but can be called to force a layout render.
+- **use_outlet()**
+  - Outputs the child content inside a layout (similar to a slot in other frameworks).
+- **use_children( $args = [] )**
+  - Returns child posts of current post, passing optional wp_query arguments.
+
+### Components
+
+- **use_component( $name, $props = null )**
+  - Renders a component by name, passing optional props/arguments.
+  - *Usage:* `use_component('work-block', ['title' => 'Test title']);`
+
+### SVGs
+
+- **use_svg( $name, $args = [] )**
+  - Renders an inline SVG from the `/images` directory, with optional attributes (like class, width, etc).
+  - *Usage:* `use_svg('logo', ['class' => 'header-logo']);`
+
+### Arguments & Attributes
+
+- **set_defaults( $args, $defaults )**
+  - Merges user-supplied arguments with default values for components or templates.
+  - *Usage:* `$args = set_defaults($args, ['title' => 'Default Title']);`
+- **set_attribute( $att_name, $condition )**
+  - Conditionally adds an attribute to an HTML element if the condition is true.
+  - *Usage:* `set_attribute('disabled', !$is_enabled);`
+
+---
+
+These helpers are available globally in your templates, components, and layouts, making it easy to build dynamic, maintainable WordPress themes with WP Easy.
+
+---
+
+## That's It!
+
+You now have everything you need to start building modern WordPress themes with WP Easy. The framework handles the complexity while you focus on creating great websites. Just code, save, and refresh—it's that simple!
+
+For more information, check out the [WP Easy Theme](https://github.com/drewbaker/wp-easy-theme/) starter theme to see these concepts in action.
+
+---
