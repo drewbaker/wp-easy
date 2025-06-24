@@ -23,7 +23,10 @@ class Plugin extends Plugin_Base {
 		( new Template() )->init();
 		( new Override() )->init();
 		( new Settings() )->init();
-		( new Live_Reload() )->init();
 		( new Acf() )->init();
+
+		if ( Utils::is_debug_mode() ) {
+			( new Live_Reload() )->init();
+		}
 	}
 }
