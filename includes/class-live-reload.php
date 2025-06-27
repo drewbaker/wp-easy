@@ -18,10 +18,7 @@ class Live_Reload {
 	 * Init function
 	 */
 	public function init() {
-		if ( Utils::is_debug_mode() ) {
-			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-		}
-
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_action( 'wp_ajax_wp-easy-live-reload', array( $this, 'ajax_reload_handler' ) );
 		add_action( 'wp_ajax_nopriv_wp-easy-live-reload', array( $this, 'ajax_reload_handler' ) );
 	}
@@ -45,10 +42,15 @@ class Live_Reload {
 
 		$extensions = array( 'php', 'js', 'css', 'scss' );
 		$dataFile   = $dist_dir['base']['dir'] . 'live-reload.json';
-		$watchDir   = get_theme_root();
+		$watchDir   = array_unique(
+			array(
+				get_stylesheet_directory(),
+				get_template_directory(),
+			)
+		);
 
 		$exclude_files = array();
-		$exclude_paths = array( '.git', 'images', 'vendor' );
+		$exclude_paths = array( '.git', 'images', 'vendor', 'node_modules' );
 
 		$excludeFilesFilter = function ( $f ) use ( $dataFile, $exclude_files ) {
 			$exclude_files[] = $dataFile;
@@ -57,7 +59,7 @@ class Live_Reload {
 
 		$excludePathsFilter = function ( $path ) use ( $exclude_paths ) {
 			foreach ( $exclude_paths as $exclude ) {
-				if ( preg_match( $exclude, $path ) ) {
+				if ( strpos( $path, $exclude ) !== false ) {
 					return false;
 				}
 			}
