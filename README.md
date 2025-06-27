@@ -1,288 +1,415 @@
-# WP Easy 
-## A framework for a modern WordPress theme, but make it easy. 
+# WP Easy
 
-Build a modern WordPress theme, but without any of the hassle of modern frontend development. Easy to use, but respecting best practices.
+A framework for building modern WordPress themes—without the hassle of modern frontend build tools.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Why WP Easy?](#why-wp-easy)
+- [Getting Started](#getting-started)
+- [Router](#router)
+- [Templates & Components](#templates--components)
+  - [How SFCs Work](#how-sfcs-work)
+  - [Layouts](#layouts)
+  - [Templates](#templates)
+  - [Components](#components)
+- [Styles & Scripts](#styles--scripts)
+  - [Key Features](#key-features)
+  - [SCSS Support](#scss-support)
+  - [Styles in `/styles/` Directory](#styles-in-styles-directory)
+  - [Scripts in `/scripts/` Directory](#scripts-in-scripts-directory)
+- [SVG Usage](#svg-usage)
+- [Live Reload](#live-reload)
+- [Helper Functions](#helper-functions)
+  - [Routing & Layout](#routing--layout)
+  - [Components](#components-1)
+  - [SVGs](#svgs)
+  - [Arguments & Attributes](#arguments--attributes)
+
+---
 
 ## Features
 
-- No build step
-- Flexible reusable template routing
-- Reusable component based approach
-- Single File Components
-- SVG support built in
-- SCSS support
-- Font loading (local fonts, Adobe, Google and more)
-- Opinionated structure, so you stick to best practices 
-- Auto loading of CSS & JS
-- Open Graph and SEO by default
+- **No build step:** Just code, save, and refresh—no npm or terminal required.
+- **Flexible template routing:** Easily map URLs to templates and layouts, or fall back to WordPress's default template hierarchy.
+- **Component-based architecture:** Build your site using reusable templates and components.
+- **Single File Components (SFC):** Combine PHP, HTML, SCSS, and JS in a single file for layouts, templates, and components.
+- **SCSS support:** Write modern, nested styles directly in your components and templates.
+- **Automatic CSS & JS loading:** All stylesheets and scripts in the appropriate directories are auto-enqueued.
+- **SVG support:** Easily include and customize SVGs in your theme, and enable SVG upload in the WordPress media library.
+- **Live reload:** Instantly see changes in your browser during development.
+- **Performance optimizations:** Automatic caching for styles and scripts, and JS/CSS source maps for easier debugging.
+- **Opinionated structure:** Encourages best practices and maintainable code organization.
+- **Advanced Custom Fields (ACF) integration:** Additional rules and helpers for ACF users.
+- **Other enhancements:**
+  - SEO & Open Graph best practices and meta tags included by default.
+  - Font loading: Supports local fonts, Adobe, Google, and more.
+  - Disable WordPress emojis for cleaner markup.
+  - Customize login page header URL, text, and styling.
+  - Disable comments if desired.
 
-## Why
+---
 
-This theme framework is aimed at people who understand the basics of HTML/CSS/JS, but don't want to deal with the mess that modern frontend development has become. There is no build step. You don't need to now how to use terminal. Don't know what `npm` is? No problem, don't need it!
+## Why WP Easy?
 
-I built this theme framework so that my brother (an amazing graphic designer) could build themes purely through his FTP based code editor. He knows HTML and CSS really well, he doesn't know JS, but he does know jQuery. In my experince, this is common for people that have a job tangental to frontend web development - designers, copywriters, project managers and backend engineers.
+WP Easy is designed for people who understand the basics of HTML, CSS, and maybe a bit of JavaScript, but don't want to deal with the complexity of modern frontend development. There is no build step, no need to use the terminal, and you don't need to know what npm is—just code, save, and refresh.
 
-My brother does want to learn, and he wants to build websites as close to the "right" way as possible. So I've attempted to create a framework that pushes him in a more modern direction. Component based. JS modules, SCSS (PostCSS not being possible server side just yet) and template routing.
+The inspiration for this framework came from my brother, an amazing graphic designer who wanted to build WordPress themes using only his FTP-based code editor. He knows HTML and CSS really well, and some jQuery, but not modern JavaScript. In my experience, this is common for people whose jobs are tangential to frontend web development—designers, copywriters, project managers, and backend engineers.
 
-## Documentation
+My brother wants to build websites the "right" way, but doesn't want to deal with the mess of modern build tools. He wants to learn and improve, so I created a framework that nudges him in a more modern direction: component-based architecture, JS modules, SCSS, and template routing. WP Easy lets people like him build professional, modern themes without the usual barriers—just code with your favorite editor and see the results instantly.
 
-### Router
+---
 
-The entry point for most people will be the themes `/router.php` file. This file determines what template is shown to the user, and what layout file to place that template in. 
+## Getting Started
 
-Layouts are located in the theme's `/layouts` directory.
-Templates are located in the theme's `/templates` directory.
+Follow these steps to get up and running with WP Easy:
 
-You should setup your page and post's in the WordPress dashboard as you normally would. Enable [Pretty Permalinks](https://wordpress.org/documentation/article/customize-permalinks/#pretty-permalinks). Then in `/router.php` you can map out the templates you want to use depending on the URLs you want your site to support.
+1. **Set up your WordPress site as usual.**
+2. **Install the WP Easy plugin.**
+   - Upload or clone this plugin into your `wp-content/plugins` directory and activate it from the WordPress admin.
+3. **Install the [WP Easy Theme](https://github.com/drewbaker/wp-easy-theme/).**
+   - Download or clone the starter theme into your `wp-content/themes` directory and activate it.
+4. **Enable [Pretty Permalinks](https://wordpress.org/documentation/article/customize-permalinks/#pretty-permalinks).**
+   - Go to WordPress Settings > Permalinks and select any option other than "Plain".
+5. **Configure your routes in `/router.php` in your theme.**
+   - Map URLs to templates and layouts as described in the Router section below.
 
-For example:
+You're now ready to start building your site using WP Easy's component-based approach!
 
-```
+---
+
+## Router
+
+The router is the heart of WP Easy's template system. It lets you map URLs to specific templates and layouts, giving you full control over your site's structure—similar to routing in modern JavaScript frameworks.
+
+### Where to Configure
+
+Define your site's routes in your theme's `/router.php` file.  
+If `router.php` is missing, the theme will follow WordPress's default template hierarchy.
+
+### Example
+
+```php
 $routes = [
-    'home'              => '/',
-    'work'              => '/work/',
-    // Would use the /layouts/alternate.php layout, with the /templates/work.php page template
-    'work-detail'       => ['path' => '/work/:spot/', 'layout' => 'alternate', 'template' => 'work'],
-    'reel'              => '/reel/',
+    'home'        => '/',
+    'work'        => '/work/',
+    'work-detail' => [
+        'path'    => '/work/:spot/',
+        'layout'  => 'alternate',
+        'template'=> 'work'
+    ],
+    'reel'        => '/reel/',
 ];
-
 return $routes;
 ```
 
-This syntax is similar to Node's Express path syntax. The key `home` is the route name, and the value is an array of `[path, template, layout]`. The `path` is the URI you are trying to match to. Note you can use a short string syntax instead of the array syntax of `name => '/path/'` for simple routes. 
+### How Routing Works
 
-The `layout` is optional, and allows you to set a different layout file to wrap the template. If no layout is set, the `/layouts/default.php` file is used.
+- **Route key:** The array key (e.g., `home`, `work`) is the route name.
+- **Path:** The value can be a string (for simple routes) or an array (for advanced options).
+- **Array syntax:**
+  - `path` — The URL pattern to match (supports parameters like `:spot`).
+  - `layout` (optional) — The layout file to use from `/layouts/`. Defaults to `default.php` if not set.
+  - `template` (optional) — The template file to use from `/templates/`. If not set, the route key is used as the template name.
 
-The `template` is optional, and allows you to reuse the same template for multiple routes. If no template set, the route key is used as the template name.
+This syntax is similar to Node's Express path syntax. For simple routes, you can use `'name' => '/path/'`. For more control, use the array syntax.
 
-The router has a helper function `get_route_name()` that you can use to get the current active templates name.
+### Routing Fallback
 
-### Single File Components
+If no route matches, or if `/router.php` is missing, WP Easy will fall back to WordPress's default template hierarchy. This ensures compatibility with standard WordPress behavior.
 
-Thr big inovation of WP Easy is the concept of Single File Components (SFC). These SFC's have been inspired by Vue's SFC, but now they work in WordPress.
+### Tips
 
-Page templates and components can use SFC syntax, layouts can't. An example of an empty SFC is:
+- Use route parameters (e.g., `:spot`) to create dynamic routes.
+- You can specify a custom layout or template for any route.
+- Keep your routing file organized for easier maintenance.
 
-```
-<?php // Some PHP here ?>
+---
+
+## Templates & Components
+
+WP Easy uses a Single File Component (SFC) structure for layouts, templates, and components. This means you can combine PHP, HTML, SCSS, and JavaScript in a single `.php` file, making your code more modular and maintainable.
+
+### How SFCs Work
+
+Each SFC can contain the following blocks:
+- **PHP:** For logic and data preparation (at the top of the file).
+- **<head> (optional):** For including third-party stylesheets or JS snippets.
+- **<template>:** The main HTML markup for your layout, template, or component.
+- **<style>:** Scoped SCSS/CSS for this file.
+- **<script>:** JavaScript specific to this file.
+
+**Example SFC:**
+```php
+<?php // PHP logic ?>
 <head>
-     <!-- Anything you put in here will be added to the head, good for scripts -->
+    <!-- Head content here -->
 </head>
 
 <template>
-    <div class="example">Some HTML in here</div>
+    <div class="example">Some HTML here</div>
 </template>
 
 <style>
-    // You can use CSS, SCSS and even PHP here
-    .example {}
+.example { color: red; }
 </style>
 
 <script>
-    $('.example').click(function(){
-        // Some JS on click of this element 
-    })
+$('.example').click(function() {
+    // JS here
+});
 </script>
 ```
+
+---
 
 ### Layouts
 
-Layouts are the top level strucutre of the page. You will generally always have a `/layout/default.php` layout. This would contain global elements like headers or footers. It must contain a few required functions, so see the [WP Easy starter theme](https://github.com/drewbaker/wp-easy-theme) for reference.
+- Located in `/layouts`
+- Use the SFC structure as above.
+- Can define layout-specific CSS and JS inside the layout file.
+- Use `use_outlet()` to load the template file (like a slot in other frameworks).
+- Can load header and footer components using `use_component()`.
+- The `<head>` block can be added before `<template>` to load third-party stylesheets or JS.
 
-Layouts are not Single File Components. So put your styles in main.scss and scripts in main.js. 
+---
 
-- Layouts are located in the theme's `/layouts` directory.
+### Templates
 
-###  Templates & Components
+- Located in `/templates`
+- Use the SFC structure.
+- Represent the main content for a route.
+- Can include components using `use_component()`.
 
-Templates and components work very similary. The best way to think of theme is that you are building a website like a jigsaw puzzle. The components are each a piece of the puzzle. A template is where all the individual pieces (components) are put together.
-
-- Templates are located in the theme's `/templates` directory.
-- Components are located in the theme's `/component` directory.
-
-A template, or a component will always be a `.php` file, that includes the HTML, Styles and JS. 
-
-#### Templates
-
-Your `/templates/work.php` might look something like this:
-
-```
+**Example Template:**
+```php
 <template>
 <main class="work">
-    <?php use_component('work-block', ['title' => 'test of title argument']); ?>
+    <?php use_component('work-block', ['title' => 'Test title']); ?>
 </main>
 </template>
-
-<style>
-.work {
-    background: red;
-
-    .work-block {
-        .background: blue; // YES, this is SCSS and works out of the box!
-    }
-
-    // Media queries can be used like this, this will make the title black on phones
-    @media #{$lt-phone} {
-        background-color: yellow;
-        
-        .work-block {
-            background: var(--color-black); // This is how you use native CSS variables that are defined in /styles/varibles.scss
-        }
-    }   
-}
-</style>
-
-<script>
-$('.work').click(()=>{
-    console.log('Something clicked!')
-})
-</script>
 ```
 
-The `style` block is actually `SCSS`, it's an extended version of the `CSS` you've seen before. It's big advanatge is it allows for nesting, and varibles. Native CSS allows for varibles nativly too, those are better and are used in `/styles/varibles.scss`, but some advanced varibles like the media-query one used in the example can't be used with native CSS vars. 
+---
 
-Nesting is coming to native CSS too eventualy, but for now the SCSS synatx is easier to use. You can read about how [nesting works here](https://sass-lang.com/guide/#nesting).
+### Components
 
-The `@media #{$lt-phone}` is a custom media query defined in the `/styles/global/media-queries.scss` file. There are a few more defined there that will come in real handy for styling a component for different screen sizes. 
+- Located in `/components`
+- Use the SFC structure.
+- Should be isolated and only use data passed via props.
+- Each component can have its own `<style>` or `<script>` block.
 
-If you have global styles or JS that you need, the you can use the `/styles/main.scss` and `/scripts/main.js` files for these. Any stylesheet in the `/styles/*` directory will be auto loaded on every page.
-
-#### Components
-
-Components are one of the central reasons this framework exists. They are very powerful once you get the hang of it.
-
-In your template, you can call `use_component($name, $props = [])`. For exmaple:
-
-```
-<?php use_component('work-block', ['title' => 'Test of title argument']); ?>
-``` 
-
-What this is doing is similar to the WordPress function `get_template_part()`, it's loading in a reusable chunk of HTML (and PHP) code.
-
-For exmaple, the `/components/work-block.php` component might look like this:
-
-```
+**Example Component:**
+```php
 <?php
-// Set default props for the component
-$args = set_defaults($args, [
-    'title' => 'Title default here',
-]);
+$args = set_defaults($args, ['title' => 'Default Title']);
 ?>
-
 <template>
     <div class="work-block">
-        <h2 class="title">
-            <?= $args['title']; ?>
-        </h2>
+        <h2><?= $args['title']; ?></h2>
     </div>
 </template>
-
 <style>
-.work-block {
+.work-block { background: red; }
+</style>
+```
+
+---
+
+**Key Points:**
+- SFCs keep logic, markup, styles, and scripts together for each piece of your site.
+- Layouts, templates, and components all use the same SFC pattern.
+- Use helper functions like `use_component()`, `use_outlet()`, and `set_defaults()` to keep your code clean and modular.
+
+---
+
+## Styles & Scripts
+
+WP Easy makes managing styles and scripts simple and modern, with support for SCSS, modular JavaScript, and automatic asset loading.
+
+### Key Features
+
+- **SCSS support:** Write modern, nested styles in your SFCs and global files.
+- **Component Styles & Scripts:** Use `<style>` and `<script>` blocks directly in your SFC files (layouts, templates, and components).
+- **Site Styles & Scripts:** All files in `/styles/` and `/scripts/` are automatically loaded.
+- **Automatic Caching:** Styles and scripts are cached for optimal performance.
+- **Source Maps:** CSS and JS source maps are enabled for all files, including templates, for easier debugging.
+- **jQuery:** jQuery is enqueued by default, and `$` is available as a synonym for `jquery`.
+
+---
+
+### SCSS Support
+
+- SCSS syntax is supported in `<style>` blocks within SFCs.
+- Global SCSS files in `/styles/global/` are automatically imported—no need to use `@import` in every SFC.
+- **Tip:** Namespace your CSS under a class matching the file or component name for better maintainability.
+
+**Example:**
+```scss
+<style>
+.example {
     background: red;
     .title {
         color: blue;
     }
-}
-</style>
-```
-
-It's storngly recommend that you take the approach of keeping your components as isolated as possible. Meaning, that they only know data that is passed into them via a prop. So doing something like this is correct:
-
-```
-<?php use_component('work-block', ['title' => get_the_title()]); ?>
-```
-
-Each component can have it's own `<style>` or `<script>` block in it, just like templates. They are loaded automatically once, whenever the component is used. 
-
-### Global Styles & Scripts
-
-In all templates and components (but not layouts) you have access to Single File Component style block, and the ability to use some useful media queries. Like so:
-
-```
-<style>
-.example {
-    background: red;
-
-    // Media queries can be used like this
-    @media #{$lt-phone} {
-        background: green;
-    }   
-}
-</style>
-```
-
-### SCSS
-
-All templates and components can use a Single File Component style block that supports [SCSS syntax](https://devhints.io/sass). The big advantage to SCSS is the abibility to nest selectors.
-
-Any `.scss` file located `/styes/global/` will be auto loaded into all stylesheets, so it's very useful to share gloabl SASS variables that you want. That is how the default media queries work.
-
-NOTE: It is strongly recommend that you namespace all CSS under one class, and that name matchs the file name of your component or template.
-
-```
-<style>
-// It is strongly recommend that you namespace all CSS under one class, and that name matchs the file name of your component or template.
-.example {
-    background: red;
-
-    .title {
-        .color: blue; // YES, this is SCSS and works out of the box!
-    }
-
     @media #{$lt-phone} {
         background-color: yellow;
-        
         .title {
-            color: var(--color-black); // This is a CSS var that is declared in /styles/varibles.scss
+            color: var(--color-black);
         }
-    }   
+    }
 }
 </style>
 ```
 
-### SVGs
+---
 
-`use_svg('logo', ['class' => 'foo'])` will render the SVG found in theme `/images/logo.svg` and give it an attribute of `class="foo"`. 
+### Styles in `/styles/` Directory
 
-Note: Any prop you pass will be added as an HTML attribute on the SVG.
+- **Global styles:** SCSS files in `/styles/global/` are auto-imported into all SFC and site styles.
+- **Site styles:** SCSS files in `/styles/` are merged, compiled, and saved as `general-compiled(.min).css`. The compiled file is automatically loaded.
+- **CSS auto-enqueue:** All CSS files in `/styles/` are automatically enqueued.
+- **Custom login page styles:** Place in `/styles/login.css`.
+- **Custom admin styles:** Place in `/styles/admin.css`.
 
-So the above, will be turned into this:
-```
-<svg class="foo" version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="157.8px" height="20.6px" viewBox="-225.9 375.3 157.8 20.6" xml:space="preserve" >
-    //... SVG contents in here
+---
+
+### Scripts in `/scripts/` Directory
+
+- **Component JS as modules:** Component JS files are enqueued as ES modules using `wp_enqueue_script_module()`, not inline, enabling [importmap](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/importmap).
+- **Main script file:** `/scripts/main.js` is the entry point for site-wide scripts.
+- **Utility scripts:** All JS files in `/scripts/` and `/scripts/utils/` are registered as modules and set as dependencies of the main script.
+- **Library scripts:** All scripts in `/scripts/libs/` are auto-enqueued.
+
+---
+
+**Key Points:**
+- Styles and scripts are modular, auto-loaded, and optimized for performance.
+- Use SFCs to keep your styles and scripts close to your markup and logic.
+- Take advantage of global and site-wide files for shared styles and functionality.
+
+---
+
+## SVG Usage
+
+Use `use_svg('logo', ['class' => 'foo'])` to render `/images/logo.svg` with custom attributes.
+
+**Example Output:**
+
+```html
+<svg class="foo" ...>
+    <!-- SVG contents here -->
 </svg>
 ```
 
-### JavaScript
+---
 
-TODO Better documentation of how JS works
+## Live Reload
 
-- Explain how auto including of JS, anything in `/scripts/libs/` will be auto enqueued as a module.
-- Explain jQuery `$` works globally
-- Explain how to use the included JS modules
+WP Easy includes a built-in live reload feature that automatically refreshes your browser when you make changes to theme files—similar to hot reload in modern development frameworks like Vue.js.
 
-### Fonts
+### How It Works
 
-TODO Better documentation of how fonts work
+When `WP_DEBUG` is enabled in your WordPress configuration, the live reload module automatically:
 
-- Create a folder `/fonts`
-- Add fonts to `/styles/fonts.css`
-- Add font name to Webfontloader in `/scripts/fonts.js`
-- Font loaded events
+- **Monitors theme files** for changes in real-time
+- **Refreshes the browser** instantly when files are modified
+- **Supports child themes** by monitoring both parent and child theme directories
+- **Works with all file types** including PHP, SCSS, CSS, and JavaScript files
 
-### Caching
+### Setup
 
-TODO Explain how caching works, and the "Purge Cache" button.
+1. **Enable WordPress Debug Mode**
+   
+   Add this to your `wp-config.php`:
+   ```php
+   define('WP_DEBUG', true);
+   define('WP_DEBUG_LOG', true);
+   ```
 
-### Helper functions
+2. **That's it!** The live reload feature will automatically activate when you're logged in as an administrator.
 
-TODO Better documentation of these
+### What Gets Monitored
 
-- `use_component($name, $props = [])`
-- `use_children($WpQueryArgs = [])`
-- `use_svg($name, $attrs = [])`
-- `use_outlet()`
-- `get_route_name()`
-- `set_defaults($props = [])` for setting defaults on component props
-- `set_attribute('controls', true)` for setting of HTML element attributes that need to be present or not present, like `controls` or `playsinline`
+The live reload feature watches for changes in all theme/child-theme sub directories excluding:
+- `/node_modules` — Node.js dependencies (not theme files)
+- `/.git` — Version control files
+- `/vendor` — Composer dependencies
+- `/images` — Static assets (changes don't require page refresh)
+
+### Features
+
+- **Instant feedback** — See changes immediately without manual refresh
+- **Child theme support** — Works with both parent and child themes
+
+### Troubleshooting
+
+**Live reload not working?**
+- Ensure `WP_DEBUG` is set to `true` in `wp-config.php`
+- Verify your theme files are in the correct directories
+
+**Browser console errors?**
+- Live reload errors are logged to the browser console but don't affect functionality
+- These are typically connection-related and resolve automatically
+
+### Disabling Live Reload
+
+To disable live reload in production:
+```php
+define('WP_DEBUG', false);
+```
+
+---
+
+## Helper Functions
+
+WP Easy provides a set of global helper functions to make building templates and components easier, more modular, and more maintainable. These helpers streamline common tasks such as rendering components, managing layouts, handling SVGs, and working with arguments.
+
+### Routing & Layout
+
+- **get_route_name()**
+  - Returns the current active route's name.
+  - *Usage:* `if (get_route_name() === 'home') { /* ... */ }`
+- **use_layout()**
+  - Renders the current layout file. Layout is determined by router file. The fallback layout name is 'default'. Typically used internally in theme's `template.php`, but can be called to force a layout render.
+- **use_outlet()**
+  - Outputs the child content inside a layout (similar to a slot in other frameworks).
+- **use_children( $args = [] )**
+  - Returns child posts of current post, passing optional wp_query arguments.
+
+### Components
+
+- **use_component( $name, $props = null )**
+  - Renders a component by name, passing optional props/arguments.
+  - *Usage:* `use_component('work-block', ['title' => 'Test title']);`
+
+### SVGs
+
+- **use_svg( $name, $args = [] )**
+  - Renders an inline SVG from the `/images` directory, with optional attributes (like class, width, etc).
+  - *Usage:* `use_svg('logo', ['class' => 'header-logo']);`
+
+### Arguments & Attributes
+
+- **set_defaults( $args, $defaults )**
+  - Merges user-supplied arguments with default values for components or templates.
+  - *Usage:* `$args = set_defaults($args, ['title' => 'Default Title']);`
+- **set_attribute( $att_name, $condition )**
+  - Conditionally adds an attribute to an HTML element if the condition is true.
+  - *Usage:* `set_attribute('disabled', !$is_enabled);`
+
+---
+
+These helpers are available globally in your templates, components, and layouts, making it easy to build dynamic, maintainable WordPress themes with WP Easy.
+
+---
+
+## That's It!
+
+You now have everything you need to start building modern WordPress themes with WP Easy. The framework handles the complexity while you focus on creating great websites. Just code, save, and refresh—it's that simple!
+
+For more information, check out the [WP Easy Theme](https://github.com/drewbaker/wp-easy-theme/) starter theme to see these concepts in action.
+
+---
