@@ -619,6 +619,7 @@ class Utils {
 			$post_object->thumbnail_id = get_post_thumbnail_id( $post_object->ID );
 			$post_object->title        = apply_filters( 'the_title', $post_object->post_title, $post_object->ID );
 			$post_object->content      = apply_filters( 'the_content', $post_object->post_content );
+			$post_object->excerpt      = get_the_excerpt( $post_object ) ?: wp_trim_excerpt( strip_shortcodes( $post_object->post_content ) );
 		}
 		return $post_object;
 	}

@@ -52,6 +52,14 @@ function use_svg( $name, $args = [] ) {
 }
 
 /**
+ * Wrapper function for Utils::get_adjacent_sibling()
+ */
+function use_adjacent($post_id, $direction = 'next', $args = null)
+{
+    return \WpEasy\Utils::get_adjacent_sibling($post_id, $direction, $args);
+}
+
+/**
  * Echo attribute if conditioin met.
  *
  * @param string $att_name  Attribute name.
