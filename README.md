@@ -376,6 +376,12 @@ $args = set_defaults($args, [
 
 WP-Easy provides powerful SCSS support with automatic compilation and loading.
 
+- **SCSS compilation** - Automatic SCSS to CSS conversion
+- **Global imports** - Files in `/styles/global/` are auto-imported
+- **Component scoping** - Styles are scoped to components
+- **Media queries** - Use `$lt-phone`, `$lt-tablet` variables
+- **CSS variables** - Use `var(--color-primary)` for theming
+
 ### Global Styles (`/styles/main.scss`)
 
 ```scss
@@ -426,13 +432,44 @@ body {
 </style>
 ```
 
-### Style Features
+---
 
-- **SCSS compilation** - Automatic SCSS to CSS conversion
-- **Global imports** - Files in `/styles/global/` are auto-imported
-- **Component scoping** - Styles are scoped to components
-- **Media queries** - Use `$lt-phone`, `$lt-tablet` variables
-- **CSS variables** - Use `var(--color-primary)` for theming
+## Special Theme Styles
+
+WP-Easy automatically handles two special CSS files for WordPress-specific areas:
+
+### Login Page Styling (`/styles/login.css`)
+
+Customize the WordPress login page appearance:
+
+```css
+body.login {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+#login h1 a {
+  background-image: url(../images/logo.svg);
+  background-position: center center;
+  background-size: auto;
+}
+```
+
+### Admin Area Styling (`/styles/admin.css`)
+
+Customize the WordPress admin dashboard:
+
+```css
+#wpadminbar {
+    background: #2c3e50;
+}
+```
+
+### Special Features
+
+- **Automatic loading** - Files are automatically enqueued when present
+- **Login page** - `login.css` only loads on `/wp-login.php`
+- **Admin area** - `admin.css` only loads in the WordPress admin
+- **Excluded from frontend** - These files don't load on your public website
+- **Favicon integration** - Admin CSS automatically includes your theme's favicon
 
 ---
 
@@ -623,6 +660,7 @@ WP-Easy makes it easy to include and customize SVGs.
 ### Basic SVG Usage
 
 ```php
+// Will render `/images/logo.svg` with supplied attributes.
 <? use_svg('logo', ['class' => 'site-logo', 'width' => 120]); ?>
 ```
 
