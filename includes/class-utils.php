@@ -213,10 +213,10 @@ class Utils
         $next_posts_url = null;
         $previous_posts_url = null;
 
-        if (! $query->max_num_pages || $query->max_num_pages >= $next_page) {
+        if ($query->max_num_pages >= $next_page) {
             $next_posts_url = get_pagenum_link($next_page);
         }
-        if ($previous_page < 1) {
+        if ($previous_page) {
             $previous_posts_url = get_pagenum_link($previous_page);
         }
 
