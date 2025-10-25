@@ -192,9 +192,12 @@ class Utils
         } else {
 
             // Set default query args
-            $queried_object = get_queried_object();
+            $post_type = 'post';
+            if(is_archive()) {
+                $post_type = get_queried_object()->slug ?? 'post';
+            }
             $defaults = array(
-                'post_type'         => $queried_object->slug ?? 'post',
+                'post_type'         => $post_type,
                 'posts_per_page'    => get_option('posts_per_page'),
                 'paged'             => get_query_var('paged') ? get_query_var('paged') : 1,
                 'orderby'           => 'date',
