@@ -192,8 +192,9 @@ class Utils
         } else {
 
             // Set default query args
+            $queried_object = get_queried_object();
             $defaults = array(
-                'post_type'         => 'post',
+                'post_type'         => $queried_object->slug ?? 'post',
                 'posts_per_page'    => get_option('posts_per_page'),
                 'paged'             => get_query_var('paged') ? get_query_var('paged') : 1,
                 'orderby'           => 'date',
