@@ -176,36 +176,39 @@ class Utils
     }
 
     /**
-     * Get all posts of the current route. Useful for category pages, archive pages, etc.
+     * Get all posts (or custom post types) of the current route. Useful for category pages, archive pages, etc.
+     * Will attempt to use the default query args if no args are provided. If used on a single post page, will return "posts".
      * 
      * @param array $args Optional. Query arguments to override defaults.
-     * @return array Array of post objects.
+     * @return object Object with posts, next_posts_url, previous_posts_url, found_posts, post_count, and max_num_pages.
      */
     public static function use_posts($args = null)
     {
         $query = null;
 
-        // If no args are provided, return the global WP_Query
-        if ($args === null) {
+        if (is_archive() || is_home()) {
+            // If used on a archive page or home page, then use the default query args
             global $wp_query;
-            $query = $wp_query;
-        } else {
 
-            // Set default query args
-            $post_type = 'post';
-            if(is_archive()) {
-                $post_type = get_queried_object()->slug ?? 'post';
+            if ($args !== null) {
+                // Merge $args with $wp_query args and create a new query
+                $args = wp_parse_args($args, $wp_query->query_vars);
+                $query = new \WP_Query($args);
+            } else {
+                // return the default global WP_Query
+                $query = $wp_query;
             }
-            $defaults = array(
-                'post_type'         => $post_type,
-                'posts_per_page'    => get_option('posts_per_page'),
-                'paged'             => get_query_var('paged') ? get_query_var('paged') : 1,
-                'orderby'           => 'date',
-                'order'             => 'DESC',
-            );
-            $args   = wp_parse_args($args, $defaults);
+        } else {
+            // Get "posts" with good defaults
+            $defaults = [
+                'post_type' => 'post',
+                'posts_per_page' => get_option('posts_per_page'),
+                'paged' => get_query_var('paged') ? get_query_var('paged') : 1,
+                'orderby' => 'date',
+                'order' => 'DESC',
+            ];
 
-            // Create the query
+            $args = wp_parse_args($args, $defaults);
             $query = new \WP_Query($args);
         }
 
