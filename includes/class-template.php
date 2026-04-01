@@ -97,9 +97,13 @@ class Template
         foreach ($directories as $namespace => $path) {
             $files = glob(get_template_directory() . $path . '/*.js');
             foreach ($files as $file) {
-                $handle    = $namespace . basename($file, '.js');
-                $handles[] = $handle;
-                wp_register_script_module($handle, get_theme_file_uri() . $path . '/' . basename($file));
+				$handle    = $namespace . basename( $file, '.js' );
+				$handles[] = $handle;
+				$theme_path = $path . '/' . basename( $file );
+				$src = get_theme_file_uri() . $theme_path;
+                $version = filemtime( get_theme_file_path($theme_path) );
+                
+				wp_register_script_module( $handle, $src, [], $version);
             }
         }
 
@@ -108,8 +112,14 @@ class Template
         $handles = array_diff($handles, ['main']);
 
         // Enqueue wp-easy scripts.
-        wp_enqueue_script_module('main', get_theme_file_uri() . '/scripts/main.js', $handles);
-        wp_enqueue_script_module('fonts');
+		$main_src = get_theme_file_uri() . '/scripts/main.js';
+		$main_version = filemtime( get_theme_file_path('/scripts/main.js') );
+		
+		$fonts_src = get_theme_file_uri() . '/scripts/fonts.js';
+		$fonts_version = filemtime( get_theme_file_path('/scripts/fonts.js') );
+		
+		wp_enqueue_script_module( 'main', $main_src, $handles, $main_version );
+		wp_enqueue_script_module( 'fonts', $fonts_src, $handles, $fonts_version );
 
         // Setup JS variables in scripts
         wp_localize_script(
