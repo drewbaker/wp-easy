@@ -348,7 +348,9 @@ class Utils
         }
 
         $src_files     = glob(get_template_directory() . '/styles/global/*.scss');
-        $src_file_time = max(array_map('filemtime', $src_files)); // Latest update time.
+        // max() throws on an empty array (PHP 8+) — a theme with no global
+        // scss files has nothing to compile, so treat that as "never updated".
+        $src_file_time = $src_files ? max(array_map('filemtime', $src_files)) : 0; // Latest update time.
 
         $out_file_path = self::get_global_scss_file_path();
         $out_file_time = file_exists($out_file_path) ? filemtime($out_file_path) : 0;
@@ -403,7 +405,8 @@ class Utils
 
         $src_dir       = get_template_directory() . '/styles/';
         $src_files     = glob($src_dir . '*.scss');
-        $src_file_time = max(array_map('filemtime', $src_files)); // current latest update time.
+        // Same empty-array guard as get_global_scss() above.
+        $src_file_time = $src_files ? max(array_map('filemtime', $src_files)) : 0; // current latest update time.
 
         $global_scss_file = self::get_global_scss_file_path();
         if (file_exists($global_scss_file)) {
