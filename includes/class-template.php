@@ -55,14 +55,15 @@ class Template
         $compiled_site_style = Utils::compile_site_styles();
         wp_enqueue_style('wp-easy-scss-compiled', $compiled_site_style['url'], [], $compiled_site_style['version']);
 
-        // Enqueue all CSS files in styles directory, excluding login.css and admin.css.
-        $css_files = glob(get_template_directory() . '/styles/' . '*.css');
-        sort($css_files, SORT_STRING | SORT_FLAG_CASE);
+        // Enqueue all CSS files in the styles directory (child and parent
+        // theme), excluding login.css and admin.css.
+        $css_files = Utils::glob_theme_files('styles/*.css');
+        ksort($css_files, SORT_STRING | SORT_FLAG_CASE);
 
         // Files to exclude from public-facing theme.
         $excluded_files = array('login.css', 'admin.css');
 
-        foreach ($css_files as $css_file) {
+        foreach ($css_files as $relative_path => $css_file) {
             $filename = basename($css_file);
 
             // Skip excluded files.
@@ -73,7 +74,7 @@ class Template
             $handle = 'wp-easy-' . $filename;
             $handle = str_replace(['.'], '-', $handle);
 
-            wp_enqueue_style($handle, get_theme_file_uri() . '/styles/' . $filename, [], null);
+            wp_enqueue_style($handle, get_theme_file_uri($relative_path), [], null);
         }
     }
 
@@ -95,15 +96,12 @@ class Template
 
         $handles = array();
         foreach ($directories as $namespace => $path) {
-            $files = glob(get_template_directory() . $path . '/*.js');
-            foreach ($files as $file) {
-				$handle    = $namespace . basename( $file, '.js' );
-				$handles[] = $handle;
-				$theme_path = $path . '/' . basename( $file );
-				$src = get_theme_file_uri() . $theme_path;
-                $version = filemtime( get_theme_file_path($theme_path) );
-                
-				wp_register_script_module( $handle, $src, [], $version);
+            // Child theme modules replace same-named parent modules; the URL
+            // points at whichever theme actually has the file.
+            foreach (Utils::glob_theme_files($path . '/*.js') as $theme_path => $file) {
+                $handle    = $namespace . basename($file, '.js');
+                $handles[] = $handle;
+                wp_register_script_module($handle, get_theme_file_uri($theme_path), [], filemtime($file));
             }
         }
 
@@ -112,10 +110,10 @@ class Template
         $handles = array_diff($handles, ['main']);
 
         // Enqueue wp-easy scripts.
-		$main_src = get_theme_file_uri() . '/scripts/main.js';
+		$main_src = get_theme_file_uri('/scripts/main.js');
 		$main_version = filemtime( get_theme_file_path('/scripts/main.js') );
 		
-		$fonts_src = get_theme_file_uri() . '/scripts/fonts.js';
+		$fonts_src = get_theme_file_uri('/scripts/fonts.js');
 		$fonts_version = filemtime( get_theme_file_path('/scripts/fonts.js') );
 		
 		wp_enqueue_script_module( 'main', $main_src, $handles, $main_version );
@@ -137,14 +135,12 @@ class Template
      */
     private function auto_enqueue_libs()
     {
-        $libs_dir = get_template_directory() . '/scripts/libs/';
-        $libs     = glob($libs_dir . '*.js');
-        foreach ($libs as $lib) {
+        foreach (Utils::glob_theme_files('scripts/libs/*.js') as $relative_path => $lib) {
             // Remove file extension and version numbers for the handle name of the script
             $handle = basename($lib, '.js');
             $handle = str_replace(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'js', '..'], '', $handle);
             $handle = rtrim($handle, '.');
-            wp_enqueue_script($handle, get_theme_file_uri() . '/scripts/libs/' . basename($lib), [], null, []);
+            wp_enqueue_script($handle, get_theme_file_uri($relative_path), [], null, []);
         }
     }
 

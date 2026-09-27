@@ -9,6 +9,7 @@ A comprehensive guide for building modern WordPress themes using the WP-Easy fra
 - [What is WP-Easy?](#what-is-wp-easy)
 - [Getting Started](#getting-started)
 - [Theme Structure](#theme-structure)
+- [Child Themes](#child-themes)
 - [Router System](#router-system)
 - [Single File Components (SFCs)](#single-file-components-sfcs)
 - [Layouts](#layouts)
@@ -117,6 +118,24 @@ return $routes;
 - **`/styles/`** - Global SCSS/CSS files (auto-loaded)
 - **`/scripts/`** - JavaScript files (auto-loaded)
 - **`/images/`** - Static images and SVGs. SVG's loaded using `use_svg()`
+
+---
+
+## Child Themes
+
+A child theme of a WP-Easy theme only needs the files it changes — everything else falls back to the parent. Declare the parent in the child's `style.css` (`Template: wp-easy-theme`), then:
+
+| What | How the child theme overrides it |
+| --- | --- |
+| `router.php`, `template.php`, `/layouts/`, `/templates/`, `/components/` | A child file is used instead of the parent's file at the same path; anything missing comes from the parent. |
+| `/styles/*.scss` | Compiled together with the parent's. A child file with the same name as a parent file replaces it (e.g. a child `variables.scss` overrides the parent's variables everywhere they're imported); child-only files are compiled after the parent's. |
+| `/styles/global/*.scss` | Same rule — merged with the parent's, same-named child files win. |
+| `/styles/*.css` | Enqueued alongside the parent's; a same-named child file replaces the parent's. |
+| `/scripts/*.js`, `/scripts/utils/*.js` | Registered as modules alongside the parent's; a same-named child module (e.g. `main.js`) replaces the parent's. |
+| `/scripts/libs/*.js` | Enqueued alongside the parent's; same-named child file wins. |
+| `/images/*.svg` (`use_svg()`) | The child's SVG is used if it has one, otherwise the parent's. |
+
+Every asset URL points at whichever theme actually contains the file, so a child theme never 404s on assets it inherits.
 
 ---
 

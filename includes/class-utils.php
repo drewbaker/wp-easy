@@ -89,6 +89,42 @@ class Utils
     }
 
     /**
+     * Theme directories to search for assets, child theme first.
+     *
+     * @return string[] [stylesheet dir, template dir], or one entry when the
+     *                  active theme isn't a child theme.
+     */
+    public static function get_theme_directories()
+    {
+        return array_values(array_unique(array(get_stylesheet_directory(), get_template_directory())));
+    }
+
+    /**
+     * Find files matching a pattern in both the child and parent themes.
+     *
+     * Keyed by path relative to the theme root. A child theme file replaces
+     * the parent's file at the same relative path (keeping the parent's
+     * position in the order); files only in the child are appended after the
+     * parent's, so they load later and can build on the parent's styles.
+     *
+     * @param string $relative_pattern Glob pattern relative to the theme root, e.g. 'styles/*.scss'.
+     *
+     * @return array<string, string> Relative path => absolute path.
+     */
+    public static function glob_theme_files($relative_pattern)
+    {
+        $files = array();
+        foreach (array_reverse(self::get_theme_directories()) as $dir) {
+            $dir     = untrailingslashit($dir);
+            $matches = glob($dir . '/' . ltrim($relative_pattern, '/\\'));
+            foreach ($matches ? $matches : array() as $path) {
+                $files[ltrim(substr($path, strlen($dir)), '/\\')] = $path;
+            }
+        }
+        return $files;
+    }
+
+    /**
      * Use layout template.
      *
      * Loads a layout template based on the 'layout' query variable.
@@ -347,7 +383,7 @@ class Utils
             return $global_scss;
         }
 
-        $src_files     = glob(get_template_directory() . '/styles/global/*.scss');
+        $src_files     = array_values(self::glob_theme_files('styles/global/*.scss'));
         // max() throws on an empty array (PHP 8+) — a theme with no global
         // scss files has nothing to compile, so treat that as "never updated".
         $src_file_time = $src_files ? max(array_map('filemtime', $src_files)) : 0; // Latest update time.
@@ -403,8 +439,9 @@ class Utils
         // Early do it to regenerate global scss file.
         $scss_content = self::get_global_scss();
 
-        $src_dir       = get_template_directory() . '/styles/';
-        $src_files     = glob($src_dir . '*.scss');
+        // Child theme .scss files are compiled too: a child file replaces the
+        // parent's file of the same name, and child-only files are added.
+        $src_files     = array_values(self::glob_theme_files('styles/*.scss'));
         // Same empty-array guard as get_global_scss() above.
         $src_file_time = $src_files ? max(array_map('filemtime', $src_files)) : 0; // current latest update time.
 
@@ -522,8 +559,15 @@ class Utils
         $dev_mode = self::is_debug_mode();
 
         $compiler = new \ScssPhp\ScssPhp\Compiler();
-        $compiler->addImportPath(self::get_theme_file('styles'));
-        $compiler->addImportPath(self::get_theme_file('global/', 'styles'));
+        // Child theme first, so an import like "variables" or "global/x"
+        // resolves to the child's file when it has one, else the parent's.
+        foreach (self::get_theme_directories() as $theme_dir) {
+            foreach (array('/styles', '/styles/global') as $styles_dir) {
+                if (is_dir($theme_dir . $styles_dir)) {
+                    $compiler->addImportPath($theme_dir . $styles_dir);
+                }
+            }
+        }
         $compiler->setOutputStyle($dev_mode ? 'expanded' : 'compressed');
 
         $map_file_path = '';
@@ -612,7 +656,7 @@ class Utils
         if (has_site_icon()) {
             $favicon_url = get_site_icon_url();
         } else {
-            $favicon_url = get_theme_file_uri() . '/images/favicon.png';
+            $favicon_url = get_theme_file_uri('/images/favicon.png');
         }
         return $favicon_url;
     }
@@ -744,7 +788,9 @@ class Utils
      */
     public static function get_template_dir($path_relative = '')
     {
-        return get_template_directory() . '/templates/' . ltrim($path_relative, '/\\');
+        $path_relative = ltrim($path_relative, '/\\');
+        $found         = $path_relative ? self::get_theme_file($path_relative, 'templates') : false;
+        return $found ? $found : get_stylesheet_directory() . '/templates/' . $path_relative;
     }
 
     /**
@@ -770,11 +816,11 @@ class Utils
      */
     public static function use_svg($name, $attrs = null)
     {
-        $svg_path = get_template_directory() . '/images/' . $name . '.svg';
+        $svg_path = self::get_theme_file($name . '.svg', 'images');
 
         // Check if file exists
-        if (! file_exists($svg_path)) {
-            error_log(sprintf('SVG file not found: %s', $svg_path));
+        if (! $svg_path) {
+            error_log(sprintf('SVG file not found: images/%s.svg', $name));
             return;
         }
 
