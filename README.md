@@ -20,6 +20,7 @@ A comprehensive guide for building modern WordPress themes using the WP-Easy fra
 - [SVG Usage](#svg-usage)
 - [Fonts](#fonts)
 - [Hot Reload Development](#hot-reload-development)
+- [SEO & Open Graph](#seo--open-graph)
 - [Helper Functions](#helper-functions)
 - [Post Object Extensions](#post-object-extensions)
 - [Common Patterns](#common-patterns)
@@ -761,6 +762,24 @@ WP-Easy includes built-in hot reload for instant development feedback.
 - Ensure `WP_DEBUG` is set to `true`
 - Check browser console for errors
 - Verify you're logged in as administrator
+
+---
+
+## SEO & Open Graph
+
+WP-Easy prints basic Open Graph tags in `wp_head`, plus a visually hidden `<div class="wp-seo">` with the page title and summary at the start of `<body>`.
+
+When an SEO plugin is active (Yoast SEO, Rank Math, SEOPress, All in One SEO or The SEO Framework):
+
+- WP-Easy skips its Open Graph tags, so pages don't get two sets of them.
+- The hidden title uses the plugin's document title.
+- With Yoast, the hidden summary also uses Yoast's meta description.
+
+To force this on or off, use the `wp_easy_seo_plugin_active` filter:
+
+```php
+add_filter('wp_easy_seo_plugin_active', '__return_true');
+```
 
 ---
 
