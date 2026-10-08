@@ -858,7 +858,9 @@ class Utils
         $upload_dir = wp_get_upload_dir();
 
         $base_dir = $upload_dir['basedir'] . '/wp-easy-dist';
-        $base_url = $upload_dir['baseurl'] . '/wp-easy-dist';
+        // Match the page's scheme. WordPress doesn't do this for the uploads URL, so an https page on a
+        // site whose address is still http:// (e.g. right after a push from Local) gets blocked assets.
+        $base_url = set_url_scheme($upload_dir['baseurl'] . '/wp-easy-dist');
 
         $css_sub_dir = '/css';
         $js_sub_dir  = '/js';
